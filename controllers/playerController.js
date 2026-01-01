@@ -1,6 +1,26 @@
+
 const Player = require('../models/Player');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+
+// Get a single player by ID (for admin details view)
+exports.getPlayerById = async (req, res) => {
+    try {
+        const player = await Player.findById(req.params.id);
+        if (!player) return res.status(404).json({ success: false, message: 'Player not found' });
+        // Map backend fields to frontend expected fields
+        const mappedPlayer = {
+            ...player.toObject(),
+            photo: player.photoUrl,
+            front: player.aadharFrontUrl,
+            back: player.aadharBackUrl,
+            receipt: player.receiptUrl
+        };
+        res.status(200).json({ success: true, data: mappedPlayer });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching player' });
+    }
+};
 
 // 1. Register Player with 4 Mandatory Files
 exports.registerPlayer = async (req, res) => {

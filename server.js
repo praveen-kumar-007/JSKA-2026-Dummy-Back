@@ -5,6 +5,10 @@ const cloudinary = require('cloudinary').v2;
 const connectDB = require('./config/db.js');
 const instRoutes = require('./routes/instRoutes');
 const playerRoutes = require('./routes/playerRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const galleryRoutes = require('./routes/galleryRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 // 1. Load Environment Variables
@@ -25,25 +29,35 @@ const app = express();
 // 4. Enhanced CORS Configuration
 // Whitelist includes local dev, Vercel, and your technical domains
 const allowedOrigins = [
+    // Local Development
     'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    // Production Deployments
     'https://ddka.vercel.app',
     'https://dhanbadkabaddiassociation.tech',
     'https://www.dhanbadkabaddiassociation.tech',
+    // Environment Variable
     process.env.FRONTEND_URL
-].filter(Boolean); // Removes undefined values if FRONTEND_URL is missing
+].filter(Boolean);
 
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps, curl, or Postman)
         if (!origin) return callback(null, true);
-        
-        // Normalize the origin (remove trailing slash)
-        const normalizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
-        
-        if (allowedOrigins.includes(normalizedOrigin)) {
+
+        // Normalize the origin (remove trailing slash and lowercase)
+        const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+        const allowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
+
+        if (allowed.includes(normalizedOrigin)) {
             callback(null, true);
         } else {
-            console.warn(`[CORS Blocked]: Attempted access from ${origin}`);
+            // Warn only in development
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(`[CORS Blocked]: Attempted access from ${origin}`);
+            }
             callback(new Error('CORS Policy: Origin not allowed by DDKA Security'));
         }
     },
@@ -68,6 +82,10 @@ app.get('/', (req, res) => {
 
 app.use('/api/institutions', instRoutes);
 app.use('/api/players', playerRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 7. Error Handling Middleware
 app.use(errorHandler);

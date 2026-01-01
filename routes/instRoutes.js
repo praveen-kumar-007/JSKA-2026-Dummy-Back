@@ -5,7 +5,8 @@ const {
     registerInstitution, 
     getAllInstitutions, 
     updateStatus, 
-    deleteInstitution 
+    deleteInstitution, 
+    getInstitutionById 
 } = require('../controllers/instController');
 
 // Multer setup for temporary file storage
@@ -14,7 +15,9 @@ const upload = multer({ dest: 'uploads/' });
 // Public Route: Register
 router.post('/register', upload.single('screenshot'), registerInstitution);
 
+
 // Admin Routes
+router.get('/:id', getInstitutionById);      // GET /api/institutions/:id
 router.get('/', getAllInstitutions);         // GET /api/institutions
 router.put('/status', updateStatus);         // PUT /api/institutions/status
 router.delete('/:id', deleteInstitution);    // DELETE /api/institutions/:id

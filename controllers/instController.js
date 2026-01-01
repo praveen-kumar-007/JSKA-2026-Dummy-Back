@@ -31,7 +31,6 @@ const registerInstitution = async (req, res) => {
 
         await newInstitution.save();
         res.status(201).json({ success: true, message: "Application submitted successfully!" });
-
     } catch (error) {
         if (req.file) fs.unlinkSync(req.file.path);
         res.status(500).json({ success: false, message: "Server Error", error: error.message });
@@ -76,4 +75,15 @@ const deleteInstitution = async (req, res) => {
     }
 };
 
-module.exports = { registerInstitution, getAllInstitutions, updateStatus, deleteInstitution };
+// 5. Get a single institution by ID (for admin details view)
+const getInstitutionById = async (req, res) => {
+    try {
+        const inst = await Institution.findById(req.params.id);
+        if (!inst) return res.status(404).json({ success: false, message: 'Institution not found' });
+        res.status(200).json({ success: true, data: inst });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching institution' });
+    }
+};
+
+module.exports = { registerInstitution, getAllInstitutions, updateStatus, deleteInstitution, getInstitutionById };

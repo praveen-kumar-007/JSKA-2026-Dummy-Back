@@ -25,6 +25,14 @@ router.post('/register', upload.fields([
     { name: 'receipt', maxCount: 1 }   // Payment Receipt (NEW)
 ]), registerPlayer);
 
+
+/**
+ * @route   GET /api/players/:id
+ * @desc    Fetch a single player record by ID for Admin Details
+ */
+const { getPlayerById } = require('../controllers/playerController');
+router.get('/:id', getPlayerById);
+
 /**
  * @route   GET /api/players
  * @desc    Fetch all player records for Admin Dashboard
