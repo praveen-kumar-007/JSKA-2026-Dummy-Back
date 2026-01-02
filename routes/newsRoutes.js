@@ -7,6 +7,8 @@ const newsController = require('../controllers/newsController');
 router.post('/', multer.array('images', 2), newsController.createNews);
 // GET /api/news
 router.get('/', newsController.getAllNews);
+// Share preview page for social platforms (server-rendered HTML)
+router.get('/share/:id', newsController.shareNewsById);
 // GET /api/news/:id
 router.get('/:id', newsController.getNewsById);
 
