@@ -9,6 +9,9 @@ const newsRoutes = require('./routes/newsRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const refereeRoutes = require('./routes/refereeRoutes');
+const championPlayerRoutes = require('./routes/championPlayerRoutes');
+const refereeAdminRoutes = require('./routes/refereeAdminRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 // 1. Load Environment Variables
@@ -86,6 +89,9 @@ app.use('/api/news', newsRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/referees', refereeRoutes);
+app.use('/api/champion-players', championPlayerRoutes);
+app.use('/api/admin/referees', refereeAdminRoutes);
 
 // 7. Error Handling Middleware
 app.use(errorHandler);
