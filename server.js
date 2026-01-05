@@ -79,8 +79,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.get('/', (req, res) => {
     res.status(200).json({ 
         message: 'DDKA API Gateway Online', 
-        owner: 'Pappu Kumar Yadav & Praveen Kumar',
-        established: 2017 
+        owner: 'Dhanbad District Kabaddi Association',
+        established: 2001 
     });
 });
 
