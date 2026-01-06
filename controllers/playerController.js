@@ -1,7 +1,7 @@
-
 const Player = require('../models/Player');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const verifyRecaptcha = require('../middleware/recaptcha');
 
 // Get a single player by Mongo _id (for admin details view)
 exports.getPlayerById = async (req, res) => {
@@ -48,10 +48,19 @@ exports.registerPlayer = async (req, res) => {
         const { 
             fullName, fathersName, gender, dob, bloodGroup, 
             email, phone, parentsPhone, address, aadharNumber, 
-            sportsExperience, reasonForJoining, transactionId, acceptedTerms 
+            sportsExperience, reasonForJoining, transactionId, acceptedTerms,
+            botField, recaptchaToken,
         } = req.body;
         
         const files = req.files;
+
+        // Honeypot: if this hidden field is filled, silently ignore as bot
+        if (botField) {
+            if (files) Object.values(files).forEach(f => {
+                if (fs.existsSync(f[0].path)) fs.unlinkSync(f[0].path);
+            });
+            return res.status(201).json({ success: true, message: "Registration successful! Awaiting manual verification." });
+        }
 
         // --- STRICT VALIDATION ---
         // Validate text fields including mandatory reasonForJoining
@@ -67,6 +76,15 @@ exports.registerPlayer = async (req, res) => {
                 if (fs.existsSync(f[0].path)) fs.unlinkSync(f[0].path);
             });
             return res.status(400).json({ success: false, message: "You must agree to the Terms & Conditions to register." });
+        }
+
+        // --- reCAPTCHA VERIFICATION (if configured) ---
+        const recaptchaOk = await verifyRecaptcha(recaptchaToken, req.ip);
+        if (!recaptchaOk) {
+            if (files) Object.values(files).forEach(f => {
+                if (fs.existsSync(f[0].path)) fs.unlinkSync(f[0].path);
+            });
+            return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed.' });
         }
 
         // Validate mandatory 4 files

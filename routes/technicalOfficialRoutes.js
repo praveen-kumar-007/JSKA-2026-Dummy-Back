@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { registrationLimiter } = require('../middleware/rateLimit');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 // Temporary disk storage for uploads (Cloudinary will store permanently)
@@ -23,6 +24,7 @@ router.post(
     { name: 'photo', maxCount: 1 },
     { name: 'receipt', maxCount: 1 }
   ]),
+  registrationLimiter,
   registerTechnicalOfficial
 );
 
