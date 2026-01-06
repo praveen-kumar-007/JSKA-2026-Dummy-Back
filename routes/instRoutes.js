@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { registrationLimiter } = require('../middleware/rateLimit');
 const { 
     registerInstitution, 
     getAllInstitutions, 
@@ -20,7 +19,6 @@ router.post(
         { name: 'screenshot', maxCount: 1 },
         { name: 'instLogo', maxCount: 1 },
     ]),
-    registrationLimiter,
     registerInstitution
 );
 

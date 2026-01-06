@@ -1,23 +1,14 @@
 const Institution = require('../models/Institution');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const verifyRecaptcha = require('../middleware/recaptcha');
 
 // 1. Register a new institution with Cloudinary Screenshot
 const registerInstitution = async (req, res) => {
     try {
-        const { regNo, transactionId, acceptedTerms, botField, recaptchaToken } = req.body;
+        const { regNo, transactionId, acceptedTerms } = req.body;
         const files = req.files || {};
         const screenshotFile = Array.isArray(files.screenshot) ? files.screenshot[0] : files.screenshot;
         const logoFile = Array.isArray(files.instLogo) ? files.instLogo[0] : files.instLogo;
-
-        // Honeypot: if hidden field is filled, treat as bot and ignore
-        if (botField) {
-            [screenshotFile, logoFile].forEach(file => {
-                if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
-            });
-            return res.status(201).json({ success: true, message: "Application submitted successfully!" });
-        }
 
         if (!screenshotFile) {
             return res.status(400).json({ success: false, message: "Payment screenshot is required." });
@@ -32,14 +23,6 @@ const registerInstitution = async (req, res) => {
             if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path);
             if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path);
             return res.status(400).json({ success: false, message: "You must agree to the Terms & Conditions to register." });
-        }
-
-        // reCAPTCHA verification (if configured)
-        const recaptchaOk = await verifyRecaptcha(recaptchaToken, req.ip);
-        if (!recaptchaOk) {
-            if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path);
-            if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path);
-            return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed.' });
         }
 
         const existing = await Institution.findOne({ $or: [{ regNo }, { transactionId }] });

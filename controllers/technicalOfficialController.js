@@ -1,7 +1,6 @@
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const verifyRecaptcha = require('../middleware/recaptcha');
 
 // Helper to safely delete temp files
 const safeUnlink = (file) => {
@@ -28,23 +27,13 @@ exports.registerTechnicalOfficial = async (req, res) => {
       mobile,
       education,
       email,
-      transactionId,
-      botField,
-      recaptchaToken,
+      transactionId
     } = req.body;
 
     const files = req.files || {};
     const signatureFile = Array.isArray(files.signature) ? files.signature[0] : files.signature;
     const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
     const receiptFile = Array.isArray(files.receipt) ? files.receipt[0] : files.receipt;
-
-    // Honeypot: if filled, treat as bot and ignore
-    if (botField) {
-      safeUnlink(signatureFile);
-      safeUnlink(photoFile);
-      safeUnlink(receiptFile);
-      return res.status(201).json({ success: true, message: 'Technical Official application submitted successfully.' });
-    }
 
     // Validate required text fields
     if (
@@ -89,15 +78,6 @@ exports.registerTechnicalOfficial = async (req, res) => {
       safeUnlink(photoFile);
       safeUnlink(receiptFile);
       return res.status(400).json({ success: false, message: 'Aadhar Number, Email or Transaction ID already registered as Technical Official.' });
-    }
-
-    // reCAPTCHA verification (if configured)
-    const recaptchaOk = await verifyRecaptcha(recaptchaToken, req.ip);
-    if (!recaptchaOk) {
-      safeUnlink(signatureFile);
-      safeUnlink(photoFile);
-      safeUnlink(receiptFile);
-      return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed.' });
     }
 
     // Upload to Cloudinary

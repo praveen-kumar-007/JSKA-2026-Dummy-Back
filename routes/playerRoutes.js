@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { registrationLimiter } = require('../middleware/rateLimit');
 
 // Configure temporary storage
 const upload = multer({ dest: 'uploads/' });
@@ -28,7 +27,7 @@ router.post('/register', upload.fields([
     { name: 'front', maxCount: 1 },    // Aadhar Front
     { name: 'back', maxCount: 1 },     // Aadhar Back
     { name: 'receipt', maxCount: 1 }   // Payment Receipt (NEW)
-]), registrationLimiter, registerPlayer);
+]), registerPlayer);
 
 
 /**

@@ -1,25 +1,13 @@
 const ContactMessage = require('../models/ContactMessage');
 const NewsletterSubscription = require('../models/NewsletterSubscription');
-const verifyRecaptcha = require('../middleware/recaptcha');
 
 // Save a new contact form submission
 exports.sendContactForm = async (req, res) => {
-  const { name, email, phone, subject, message, botField, recaptchaToken } = req.body;
-
-  // Simple honeypot check: if this hidden field is filled, treat as bot and ignore
-  if (botField) {
-    return res.status(200).json({ success: true, message: 'Message received.' });
-  }
+  const { name, email, phone, subject, message } = req.body;
   if (!email || !name || !message) {
     return res.status(400).json({ success: false, message: 'Name, email, and message are required.' });
   }
   try {
-    // Verify reCAPTCHA (enforced when RECAPTCHA_SECRET_KEY is set)
-    const recaptchaOk = await verifyRecaptcha(recaptchaToken, req.ip);
-    if (!recaptchaOk) {
-      return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed.' });
-    }
-
     const doc = await ContactMessage.create({
       name,
       email,
@@ -81,20 +69,9 @@ exports.deleteContact = async (req, res) => {
 
 // Newsletter subscription: store in DB
 exports.subscribeNewsletter = async (req, res) => {
-  const { email, botField, recaptchaToken } = req.body;
-
-  // Honeypot for bots
-  if (botField) {
-    return res.status(200).json({ success: true, message: 'Subscribed successfully.' });
-  }
+  const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
   try {
-    // Verify reCAPTCHA (enforced when RECAPTCHA_SECRET_KEY is set)
-    const recaptchaOk = await verifyRecaptcha(recaptchaToken, req.ip);
-    if (!recaptchaOk) {
-      return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed.' });
-    }
-
     const existing = await NewsletterSubscription.findOne({ email });
     if (existing) {
       return res.json({ success: true, message: 'Already subscribed.' });
