@@ -78,6 +78,16 @@ const getAllInstitutions = async (req, res) => {
     }
 };
 
+// 2b. Get only approved institutions (Public - for Affiliated Institutions page)
+const getApprovedInstitutions = async (req, res) => {
+    try {
+        const institutions = await Institution.find({ status: 'Approved' }).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: institutions });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching data" });
+    }
+};
+
 // 3. Update Status (Handles ID from body to match your frontend)
 const updateStatus = async (req, res) => {
     try {
@@ -117,4 +127,4 @@ const getInstitutionById = async (req, res) => {
     }
 };
 
-module.exports = { registerInstitution, getAllInstitutions, updateStatus, deleteInstitution, getInstitutionById };
+module.exports = { registerInstitution, getAllInstitutions, getApprovedInstitutions, updateStatus, deleteInstitution, getInstitutionById };

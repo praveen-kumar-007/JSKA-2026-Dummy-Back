@@ -5,6 +5,7 @@ const { protect, admin, isSuperAdmin, requirePermission } = require('../middlewa
 const { 
     registerInstitution, 
     getAllInstitutions, 
+    getApprovedInstitutions,
     updateStatus, 
     deleteInstitution, 
     getInstitutionById 
@@ -23,6 +24,9 @@ router.post(
     registerInstitution
 );
 
+
+// Public Route: Approved institutions for Affiliated Institutions page
+router.get('/public', getApprovedInstitutions); // GET /api/institutions/public
 
 // Admin Routes (Institution Details tab)
 router.get('/:id', protect, admin, requirePermission('canAccessInstitutionDetails'), getInstitutionById);      // GET /api/institutions/:id
