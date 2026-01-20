@@ -29,6 +29,11 @@ const technicalOfficialSchema = new mongoose.Schema({
 
   signatureUrl: { type: String, required: true },
   photoUrl: { type: String, required: true },
+  grade: {
+    type: String,
+    enum: ['A', 'B', 'C'],
+    default: null
+  },
   status: {
     type: String,
     enum: ['Pending', 'Approved', 'Rejected'],

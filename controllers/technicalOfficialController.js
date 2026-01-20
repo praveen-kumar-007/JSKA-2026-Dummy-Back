@@ -203,7 +203,9 @@ exports.updateTechnicalOfficial = async (req, res) => {
       'mobile',
       'education',
       'email',
-      'remarks'
+      'email',
+      'remarks',
+      'grade'
     ];
 
     const updateDoc = {};
