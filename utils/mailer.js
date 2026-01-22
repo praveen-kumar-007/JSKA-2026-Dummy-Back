@@ -13,6 +13,13 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  // Helpful logging for deployments and diagnostics
+  logger: true,
+  debug: true,
+  // Adjustable timeouts (milliseconds) to reduce false ETIMEDOUT errors on some hosts
+  connectionTimeout: process.env.EMAIL_CONNECTION_TIMEOUT ? Number(process.env.EMAIL_CONNECTION_TIMEOUT) : 20000,
+  greetingTimeout: process.env.EMAIL_GREETING_TIMEOUT ? Number(process.env.EMAIL_GREETING_TIMEOUT) : 20000,
+  socketTimeout: process.env.EMAIL_SOCKET_TIMEOUT ? Number(process.env.EMAIL_SOCKET_TIMEOUT) : 20000,
   tls: {
     // Allow self-signed certs in case hosting blocks proper certificates (mostly harmless for Gmail)
     rejectUnauthorized: false
@@ -84,18 +91,26 @@ const sendApprovalEmail = async ({ to, name, idNo }) => {
   } catch (err) {
     console.error('Primary send failed:', err);
 
-    // If auth failed, try a fallback on port 587 (STARTTLS)
-    if (err && (err.code === 'EAUTH' || err.message && err.message.toLowerCase().includes('auth'))) {
+    // If auth failed OR a connection timeout occurred, try a fallback on port 587 (STARTTLS)
+    const isAuthError = err && (err.code === 'EAUTH' || (err.message && err.message.toLowerCase().includes('auth')));
+    const isConnTimeout = err && (err.code === 'ETIMEDOUT' || (err.message && (err.message.toLowerCase().includes('timeout') || err.message.toLowerCase().includes('connection'))) || err.command === 'CONN');
+
+    if (isAuthError || isConnTimeout) {
       try {
-        console.log('Attempting fallback SMTP via port 587 (STARTTLS)...');
+        console.log('Attempting fallback SMTP via port 587 (STARTTLS)... This may help if port 465 is blocked by your host; if this fails, consider using a transactional email provider (SendGrid, Mailgun, Postmark) or an API-based client.');
         const fallback = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
+          host: process.env.EMAIL_HOST || 'smtp.gmail.com',
           port: 587,
           secure: false,
           auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
           },
+          logger: true,
+          debug: true,
+          connectionTimeout: process.env.EMAIL_CONNECTION_TIMEOUT ? Number(process.env.EMAIL_CONNECTION_TIMEOUT) : 20000,
+          greetingTimeout: process.env.EMAIL_GREETING_TIMEOUT ? Number(process.env.EMAIL_GREETING_TIMEOUT) : 20000,
+          socketTimeout: process.env.EMAIL_SOCKET_TIMEOUT ? Number(process.env.EMAIL_SOCKET_TIMEOUT) : 20000,
           tls: { rejectUnauthorized: false }
         });
 
@@ -106,6 +121,10 @@ const sendApprovalEmail = async ({ to, name, idNo }) => {
         return result;
       } catch (fallbackErr) {
         console.error('Fallback send also failed:', fallbackErr);
+        // If this was a connection timeout, add a note to logs about possible host firewall
+        if (fallbackErr && (fallbackErr.code === 'ETIMEDOUT' || fallbackErr.command === 'CONN')) {
+          console.error('Connection timed out when attempting SMTP. Many hosts (including some PaaS providers) block outbound SMTP ports — consider using an email API or provider (SendGrid, Mailgun) or check your host firewall settings.');
+        }
         throw fallbackErr;
       }
     }
