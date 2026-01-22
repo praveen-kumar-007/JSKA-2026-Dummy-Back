@@ -153,15 +153,33 @@ exports.getAllPlayers = async (req, res) => {
 };
 
 // 3. Update Status (Dashboard)
+const { sendApprovalEmail } = require('../utils/mailer');
+
 exports.updatePlayerStatus = async (req, res) => {
     try {
         const { id, status } = req.body;
-        const updated = await Player.findByIdAndUpdate(id, { status }, { new: true });
-        
-        if (!updated) return res.status(404).json({ success: false, message: "Player not found" });
-        
-        res.status(200).json({ success: true, message: `Status updated to ${status}` });
+
+        const player = await Player.findById(id);
+        if (!player) return res.status(404).json({ success: false, message: "Player not found" });
+
+        const previousStatus = player.status;
+        player.status = status;
+        const updated = await player.save();
+
+        // Send approval email when status changes to Approved (only once)
+        let emailSent = false;
+        if (status === 'Approved' && previousStatus !== 'Approved' && updated.email) {
+            try {
+                await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo });
+                emailSent = true;
+            } catch (err) {
+                console.error('Failed to send approval email:', err);
+            }
+        }
+
+        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent });
     } catch (error) {
+        console.error('updatePlayerStatus error:', error);
         res.status(500).json({ success: false, message: "Update failed" });
     }
 };

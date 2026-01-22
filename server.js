@@ -1,5 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
+// Load environment variables immediately so modules that run at import time (like mailer) see them
+dotenv.config();
 const cors = require('cors');
 const cloudinary = require('cloudinary').v2;
 const connectDB = require('./config/db.js');
