@@ -11,6 +11,10 @@ This project uses nodemailer with Gmail SMTP to send approval emails to players 
    # Optional: host and port (default uses Gmail on port 587 for STARTTLS)
    # EMAIL_HOST=smtp.gmail.com
    # EMAIL_PORT=587
+   # By default, the project disables SMTP sending to avoid deploy-time failures on hosts that block SMTP.
+   # To enable real sends set: EMAIL_ENABLED=true
+   # If your password contains spaces, wrap it in quotes:
+     # EMAIL_PASS="your password with spaces"
 
    If your password contains spaces, wrap it in quotes:
      EMAIL_PASS="your password with spaces"

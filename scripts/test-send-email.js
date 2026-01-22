@@ -2,6 +2,13 @@
 // Usage: npm run test-email   (from the DDKA-back folder)
 
 require('dotenv').config();
+
+// Avoid loading mailer when emailing is disabled; exit cleanly with a message.
+if (String(process.env.EMAIL_ENABLED || 'false').toLowerCase() !== 'true') {
+  console.log('EMAIL_ENABLED is not true. Email sending is disabled. Set EMAIL_ENABLED=true in .env to enable test sends.');
+  process.exit(0);
+}
+
 const { sendApprovalEmail } = require('../utils/mailer');
 
 (async () => {
