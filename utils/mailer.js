@@ -1,14 +1,16 @@
 const nodemailer = require('nodemailer');
 
 // Uses Gmail SMTP. Recommended: generate an App Password and set EMAIL_USER and EMAIL_PASS in your .env
+// By default we use port 587 (STARTTLS) to improve compatibility with hosting providers that often block 465 or 25.
 // Example .env entries:
 // EMAIL_USER=your.email@gmail.com
 // EMAIL_PASS=your_app_password
+// EMAIL_PORT=587
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 465,
-  secure: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) === 465 : true,
+  port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
+  secure: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) === 465 : false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,

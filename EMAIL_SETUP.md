@@ -8,9 +8,14 @@ This project uses nodemailer with Gmail SMTP to send approval emails to players 
 2) Environment variables (add to your .env in DDKA-back):
    EMAIL_USER=your.email@gmail.com
    EMAIL_PASS=your_app_password
+   # Optional: host and port (default uses Gmail on port 587 for STARTTLS)
+   # EMAIL_HOST=smtp.gmail.com
+   # EMAIL_PORT=587
 
    If your password contains spaces, wrap it in quotes:
      EMAIL_PASS="your password with spaces"
+
+Note: Default uses port 587 (STARTTLS). If your deployment shows connection timeouts (ETIMEDOUT), many hosts block outbound SMTP — consider using a transactional email provider (SendGrid, Mailgun, Postmark) or check your host firewall settings.
 
 Notes:
 - Use an App Password (recommended) from your Google Account (2-Step Verification required).
