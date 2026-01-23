@@ -96,6 +96,9 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/technical-officials', technicalOfficialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/referees', refereeRoutes);
+// Settings (public + admin)
+const settingsRoutes = require('./routes/settingsRoutes');
+app.use('/api/settings', settingsRoutes);
 app.use('/api/champion-players', championPlayerRoutes);
 app.use('/api/admin/referees', refereeAdminRoutes);
 app.use('/api/auth', authRoutes);

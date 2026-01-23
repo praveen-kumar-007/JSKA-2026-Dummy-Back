@@ -36,6 +36,20 @@ exports.getPlayerByIdNo = async (req, res) => {
             receipt: player.receiptUrl
         };
 
+        // Enforce global setting: if IDs are hidden to users, do not expose idNo in public endpoint
+        try {
+            const Setting = require('../models/Setting');
+            const settings = await Setting.findOne().sort({ createdAt: -1 });
+            const showIdsToUsers = settings ? settings.showIdsToUsers : true;
+            if (!showIdsToUsers) {
+                // hide id-related fields
+                delete mappedPlayer.idNo;
+            }
+        } catch (e) {
+            // if settings lookup fails, default to showing ids
+            console.error('Error checking settings for public ID exposure', e);
+        }
+
         res.status(200).json({ success: true, data: mappedPlayer });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching player by idNo' });
