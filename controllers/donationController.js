@@ -8,8 +8,8 @@ const { sendDonationEmail } = require('../utils/mailer');
 exports.createDonation = async (req, res) => {
   try {
     const { name, email, phone, amount, method, message } = req.body;
-    if (!name || !amount) {
-      return res.status(400).json({ success: false, message: 'Name and amount are required.' });
+    if (!name || !amount || !email || !phone) {
+      return res.status(400).json({ success: false, message: 'Name, amount, email and phone are required.' });
     }
 
     let receiptUrl;
@@ -23,9 +23,12 @@ exports.createDonation = async (req, res) => {
       try { fs.unlinkSync(filePath); } catch (err) { /* ignore */ }
     }
 
+    // Normalize email
+    const donorEmail = email ? String(email).trim().toLowerCase() : undefined;
+
     const donation = await Donation.create({
       name,
-      email,
+      email: donorEmail,
       phone,
       amount: Number(amount),
       method: method || 'upi',

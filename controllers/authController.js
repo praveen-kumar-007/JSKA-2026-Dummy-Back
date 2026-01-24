@@ -2,9 +2,12 @@ const jwt = require('jsonwebtoken');
 const Player = require('../models/Player');
 const Institution = require('../models/Institution');
 const TechnicalOfficial = require('../models/TechnicalOfficial');
+const Donation = require('../models/Donation');
 
-const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+const generateToken = (id, role, extra = {}) => {
+  const payload = { id, role, ...extra };
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 // Helper to standardize user data returned to client (exclude payment fields)
@@ -79,6 +82,19 @@ const sanitizeUser = (doc, role) => {
       status: doc.status,
       remarks: doc.remarks,
       createdAt: doc.createdAt
+    };
+  }
+
+  if (role === 'donor') {
+    // doc is expected to be a lightweight donor object constructed in login/me
+    return {
+      email: doc.email,
+      phone: doc.phone,
+      totalDonations: doc.totalDonations || 0,
+      confirmedCount: doc.confirmedCount || 0,
+      confirmedDonations: doc.confirmedDonations || [],
+      latestDonationId: doc.latestDonationId || null,
+      createdAt: doc.createdAt || null
     };
   }
 
@@ -167,6 +183,43 @@ const login = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
 
+    } else if (type === 'donor') {
+      // Donor login by email + registered phone (phone supplied on donation)
+      const donations = await Donation.find({ email: { $regex: `^${lowerEmail}$`, $options: 'i' } });
+      if (!donations || donations.length === 0) return res.status(401).json({ success: false, message: 'No donations found for this email' });
+
+      const provided = normalizePhone(password);
+      if (!provided) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+      // Find a donation with matching phone (compare last 10 digits)
+      const matched = donations.find(d => {
+        const stored = normalizePhone(d.phone || '');
+        return stored && lastN(stored, 10) === lastN(provided, 10);
+      });
+
+      if (!matched) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+      // Require at least one confirmed donation for this donor-phone pair
+      const confirmedDonations = donations.filter(d => {
+        const stored = normalizePhone(d.phone || '');
+        return stored && lastN(stored, 10) === lastN(provided, 10) && d.status === 'confirmed';
+      });
+
+      if (!confirmedDonations || confirmedDonations.length === 0) {
+        return res.status(403).json({ success: false, message: 'No confirmed donations found. Your donation is pending verification.' });
+      }
+
+      // Build a lightweight donor profile
+      user = {
+        email: lowerEmail,
+        phone: matched.phone || '',
+        totalDonations: donations.length,
+        confirmedCount: confirmedDonations.length,
+        confirmedDonations: confirmedDonations.map(d => ({ id: d._id, amount: d.amount, receiptNumber: d.receiptNumber, createdAt: d.createdAt, status: d.status })),
+        latestDonationId: confirmedDonations[0] ? confirmedDonations[0]._id : null
+      };
+      role = 'donor';
+
     } else {
       return res.status(400).json({ success: false, message: 'Invalid user type' });
     }
@@ -175,7 +228,18 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials or record not found' });
     }
 
-    const token = generateToken(user._id, role);
+    // Choose token id and optional extra claims
+    let tokenId = null;
+    let extra = {};
+    if (role === 'donor') {
+      // For donors, use normalized email as token id and include last 10 digits of phone to scope profile
+      tokenId = lowerEmail;
+      try { extra.donorPhone = String(provided).replace(/\D/g, '').slice(-10); } catch (e) { extra.donorPhone = ''; }
+    } else {
+      tokenId = (user && (user._id || user.id)) ? (user._id || user.id) : null;
+    }
+
+    const token = generateToken(tokenId, role, extra);
     const profile = sanitizeUser(user, role);
 
     return res.status(200).json({ success: true, message: 'Login successful', token, role, profile });
@@ -205,6 +269,29 @@ const me = async (req, res) => {
     if (role === 'player') user = await Player.findById(id);
     else if (role === 'institution') user = await Institution.findById(id);
     else if (role === 'official') user = await TechnicalOfficial.findById(id);
+    else if (role === 'donor') {
+      // For donors, token id is the donor's lower-cased email
+      const email = String(id).toLowerCase();
+      const donorPhone = decoded.donorPhone || '';
+      const donations = await Donation.find({ email: { $regex: `^${email}$`, $options: 'i' } }).sort({ createdAt: -1 });
+      // Helper to compare last 10 digits
+      const normalizePhone = (p) => String(p || '').replace(/\D/g, '');
+      const lastN = (s, n) => (s ? s.slice(-n) : '');
+      const confirmed = donations.filter(d => {
+        if (!donorPhone) return d.status === 'confirmed';
+        const stored = normalizePhone(d.phone || '');
+        return d.status === 'confirmed' && lastN(stored, 10) === lastN(donorPhone, 10);
+      });
+
+      user = {
+        email,
+        phone: confirmed[0] ? confirmed[0].phone : (donations[0] ? donations[0].phone : ''),
+        totalDonations: donations.length,
+        confirmedCount: confirmed.length,
+        confirmedDonations: confirmed.map(d => ({ id: d._id, amount: d.amount, receiptNumber: d.receiptNumber, createdAt: d.createdAt, status: d.status })),
+        latestDonationId: confirmed[0] ? confirmed[0]._id : null
+      };
+    }
 
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
