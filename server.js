@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const refereeRoutes = require('./routes/refereeRoutes');
 const championPlayerRoutes = require('./routes/championPlayerRoutes');
 const refereeAdminRoutes = require('./routes/refereeAdminRoutes');
+const donationRoutes = require('./routes/donationRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
@@ -101,6 +102,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 app.use('/api/settings', settingsRoutes);
 app.use('/api/champion-players', championPlayerRoutes);
 app.use('/api/admin/referees', refereeAdminRoutes);
+app.use('/api/donations', donationRoutes);
 app.use('/api/auth', authRoutes);
 
 // 7. Error Handling Middleware

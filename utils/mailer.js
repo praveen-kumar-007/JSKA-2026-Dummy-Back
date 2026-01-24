@@ -5,18 +5,22 @@ const nodemailer = require('nodemailer');
 const EMAIL_ENABLED = String(process.env.EMAIL_ENABLED || 'false').toLowerCase() === 'true';
 
 if (!EMAIL_ENABLED) {
-  // If emailing is disabled, export a harmless stub so callers don't error.
-  console.warn('Email sending is disabled (EMAIL_ENABLED != true). sendApprovalEmail will be a no-op.');
+  // If emailing is disabled, export harmless stubs so callers don't error.
+  console.warn('Email sending is disabled (EMAIL_ENABLED != true). email functions will be no-ops.');
+
   const sendApprovalEmail = async ({ to, name, idNo } = {}) => {
-    if (!to) {
-      console.warn('sendApprovalEmail skipped because no recipient provided and EMAIL_ENABLED is false.');
-      return { skipped: true };
-    }
+    if (!to) return { skipped: true };
     console.log(`Skipping sendApprovalEmail to ${to} because EMAIL_ENABLED is not true`);
     return { skipped: true, to, name, idNo };
   };
 
-  module.exports = { sendApprovalEmail };
+  const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
+    if (!to) return { skipped: true };
+    console.log(`Skipping sendDonationEmail to ${to} for ₹${amount} because EMAIL_ENABLED is not true`);
+    return { skipped: true, to, name, amount, attachments };
+  };
+
+  module.exports = { sendApprovalEmail, sendDonationEmail };
 } else {
   // Uses Gmail SMTP. Recommended: generate an App Password and set EMAIL_USER and EMAIL_PASS in your .env
   // By default we use port 587 (STARTTLS) to improve compatibility with hosting providers that often block 465 or 25.
@@ -136,7 +140,7 @@ if (!EMAIL_ENABLED) {
 
           // verify fallback
           await fallback.verify();
-          const result = await fallback.sendMail({ from: process.env.EMAIL_USER, to, subject, text, html });
+          const result = await fallback.sendMail({ from: process.env.EMAIL_USER, to, subject, text, html, attachments: arguments[0]?.attachments || [] });
           console.log('Fallback send succeeded');
           return result;
         } catch (fallbackErr) {
@@ -154,5 +158,19 @@ if (!EMAIL_ENABLED) {
     }
   };
 
-  module.exports = { sendApprovalEmail };
+  const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
+    if (!to) throw new Error('Recipient email is required');
+    const subject = `Thank you for your donation to DDKA`;
+    const html = `<div style="font-family: Arial, Helvetica, sans-serif;">
+      <p>Dear ${name || 'Supporter'},</p>
+      <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association.</p>
+      <p>We will process your contribution and send an official receipt shortly.</p>
+      <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
+    </div>`;
+    const text = `Dear ${name || 'Supporter'},\n\nThank you for your generous donation of ₹${amount} to Dhanbad District Kabaddi Association. We will process your contribution and send an official receipt shortly.\n\nWith gratitude,\nDDKA`;
+
+    return await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, text, html, attachments: attachments || [] });
+  };
+
+  module.exports = { sendApprovalEmail, sendDonationEmail };
 }
