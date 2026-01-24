@@ -9,6 +9,6 @@ router.get('/', refereeController.getAllReferees);
 // Admin routes (Referee Board tab)
 router.post('/', protect, admin, requirePermission('canAccessReferees'), refereeController.createReferee);
 router.put('/:id', protect, admin, requirePermission('canAccessReferees'), refereeController.updateReferee);
-router.delete('/:id', protect, isSuperAdmin, refereeController.deleteReferee);
+router.delete('/:id', protect, requirePermission('canDelete'), refereeController.deleteReferee);
 
 module.exports = router;

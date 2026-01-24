@@ -61,7 +61,12 @@ const requirePermission = (permissionKey) => (req, res, next) => {
     return res.status(401).json({ message: 'Not authorized as admin' });
   }
 
-  // Respect explicit permissions for all roles (including superadmin)
+  // Superadmin should be able to perform any permissioned action
+  if (req.admin && req.admin.role === 'superadmin') {
+    return next();
+  }
+
+  // Respect explicit permissions for all roles
   if (req.adminPermissions && req.adminPermissions[permissionKey]) {
     return next();
   }

@@ -58,6 +58,8 @@ const signup = async (req, res) => {
       canAccessTechnicalOfficials: true,
       canAccessPlayerDetails: true,
       canAccessInstitutionDetails: true,
+      canAccessDonations: true,
+      canAccessImportantDocs: true,
     };
 
     const permissions = role === 'superadmin'

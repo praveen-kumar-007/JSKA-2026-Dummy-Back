@@ -10,7 +10,7 @@ router.get('/public', championPlayerController.getAllPlayers);
 router.get('/', protect, admin, requirePermission('canAccessChampions'), championPlayerController.getAllPlayers);
 router.post('/', protect, admin, requirePermission('canAccessChampions'), championPlayerController.createPlayer);
 router.put('/:id', protect, admin, requirePermission('canAccessChampions'), championPlayerController.updatePlayer);
-// Delete champion player: superadmin only
-router.delete('/:id', protect, isSuperAdmin, championPlayerController.deletePlayer);
+// Delete champion player: requires delete permission
+router.delete('/:id', protect, requirePermission('canDelete'), championPlayerController.deletePlayer);
 
 module.exports = router;

@@ -71,7 +71,7 @@ router.put('/clear-id', protect, admin, requirePermission('canAccessPlayerDetail
  * @route   DELETE /api/players/:id
  * @desc    Delete a player record permanently
  */
-// Delete player: superadmin only
-router.delete('/:id', protect, isSuperAdmin, deletePlayer);
+// Delete player: requires delete permission
+router.delete('/:id', protect, requirePermission('canDelete'), deletePlayer);
 
 module.exports = router;

@@ -16,7 +16,7 @@ router.get('/:id', newsController.getNewsById);
 // PATCH /api/news/:id/status (admin only)
 router.patch('/:id/status', protect, admin, requirePermission('canAccessNews'), newsController.updateNewsStatus);
 
-// DELETE /api/news/:id (superadmin only)
-router.delete('/:id', protect, isSuperAdmin, newsController.deleteNews);
+// DELETE /api/news/:id (requires delete permission)
+router.delete('/:id', protect, requirePermission('canDelete'), newsController.deleteNews);
 
 module.exports = router;

@@ -32,6 +32,6 @@ router.get('/public', getApprovedInstitutions); // GET /api/institutions/public
 router.get('/:id', protect, admin, requirePermission('canAccessInstitutionDetails'), getInstitutionById);      // GET /api/institutions/:id
 router.get('/', protect, admin, requirePermission('canAccessInstitutionDetails'), getAllInstitutions);         // GET /api/institutions
 router.put('/status', protect, admin, requirePermission('canAccessInstitutionDetails'), updateStatus);         // PUT /api/institutions/status
-router.delete('/:id', protect, isSuperAdmin, deleteInstitution);    // DELETE /api/institutions/:id
+router.delete('/:id', protect, requirePermission('canDelete'), deleteInstitution);    // DELETE /api/institutions/:id
 
 module.exports = router;

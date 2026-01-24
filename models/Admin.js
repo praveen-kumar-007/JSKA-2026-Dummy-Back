@@ -17,6 +17,9 @@ const adminSchema = new mongoose.Schema({
         // Second row tiles
         canAccessPlayerDetails: { type: Boolean, default: true },        // "Player Details" tab
         canAccessInstitutionDetails: { type: Boolean, default: true },   // "Institution Details" tab
+        // Donations and Important Docs
+        canAccessDonations: { type: Boolean, default: true },            // Donations management
+        canAccessImportantDocs: { type: Boolean, default: true },       // Important Docs dropdown
         // Deletes remain reserved for superadmin, but is still permission-controlled for UI
         canDelete: { type: Boolean, default: false }
     }

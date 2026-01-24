@@ -31,6 +31,6 @@ router.get('/', protect, admin, requirePermission('canAccessTechnicalOfficials')
 router.get('/:id', protect, admin, requirePermission('canAccessTechnicalOfficials'), getTechnicalOfficialById);
 router.put('/status', protect, admin, requirePermission('canAccessTechnicalOfficials'), updateTechnicalOfficialStatus);
 router.put('/:id', protect, admin, requirePermission('canAccessTechnicalOfficials'), updateTechnicalOfficial);
-router.delete('/:id', protect, isSuperAdmin, deleteTechnicalOfficial);
+router.delete('/:id', protect, requirePermission('canDelete'), deleteTechnicalOfficial);
 
 module.exports = router;

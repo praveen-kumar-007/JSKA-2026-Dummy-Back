@@ -9,6 +9,6 @@ router.post('/', protect, admin, requirePermission('canAccessGallery'), multer.a
 // GET /api/gallery
 router.get('/', galleryController.getAllImages);
 // DELETE /api/gallery/:id (superadmin only)
-router.delete('/:id', protect, isSuperAdmin, galleryController.deleteImage);
+router.delete('/:id', protect, requirePermission('canDelete'), galleryController.deleteImage);
 
 module.exports = router;
