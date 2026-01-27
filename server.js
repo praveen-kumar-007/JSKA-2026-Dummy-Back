@@ -105,6 +105,10 @@ app.use('/api/admin/referees', refereeAdminRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/auth', authRoutes);
 
+// Sitemap (dynamic) - serves sitemap.xml including dynamic articles/images
+const sitemapRoutes = require('./routes/sitemapRoutes');
+app.use('/', sitemapRoutes);
+
 // 7. Error Handling Middleware
 app.use(errorHandler);
 

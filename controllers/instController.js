@@ -127,4 +127,32 @@ const getInstitutionById = async (req, res) => {
     }
 };
 
-module.exports = { registerInstitution, getAllInstitutions, getApprovedInstitutions, updateStatus, deleteInstitution, getInstitutionById };
+// 6. Public: get a single approved institution by id for SEO-friendly public pages
+const getInstitutionPublicById = async (req, res) => {
+    try {
+        const inst = await Institution.findById(req.params.id);
+        if (!inst || inst.status !== 'Approved') return res.status(404).json({ success: false, message: 'Institution not found' });
+        // send subset to avoid leaking admin-only or personal fields (no phones, no surfaceType, no transaction/regNo)
+        const payload = {
+            _id: inst._id,
+            instName: inst.instName,
+            instType: inst.instType,
+            instLogoUrl: inst.instLogoUrl,
+            year: inst.year,
+            totalPlayers: inst.totalPlayers,
+            area: inst.area,
+            // intentionally excluded: surfaceType, officePhone, altPhone, regNo, transactionId
+            email: inst.email || null,
+            headName: inst.headName || null,
+            secretaryName: inst.secretaryName || null,
+            website: inst.website || null,
+            address: inst.address,
+            description: inst.description || null
+        };
+        res.status(200).json({ success: true, data: payload });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching institution' });
+    }
+};
+
+module.exports = { registerInstitution, getAllInstitutions, getApprovedInstitutions, updateStatus, deleteInstitution, getInstitutionById, getInstitutionPublicById };

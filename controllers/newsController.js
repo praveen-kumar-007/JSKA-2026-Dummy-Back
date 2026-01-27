@@ -117,11 +117,19 @@ exports.shareNewsById = async (req, res) => {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${imageUrl}" />
 
-    <meta http-equiv="refresh" content="0;url=${articleUrl}" />
+    <!-- Provide canonical so Google attributes content to the frontend article URL -->
+    <link rel="canonical" href="${articleUrl}" />
+
+    <!-- Do not force immediate redirect; allow crawlers to read OG tags. JS redirect for users after short delay. -->
+    <meta name="robots" content="index,follow" />
   </head>
   <body>
-    <p>Redirecting to <a href="${articleUrl}">${articleUrl}</a>...</p>
-    <script>window.location.replace('${articleUrl}');</script>
+    <p>This page contains a preview for sharing. You will be redirected shortly: <a href="${articleUrl}">${articleUrl}</a></p>
+    <noscript><p>If you are not redirected automatically, <a href="${articleUrl}">click here</a>.</p></noscript>
+    <script>
+      // gentle redirect for real users after 3 seconds to preserve crawler access to OG tags
+      setTimeout(function(){ window.location.href = '${articleUrl}'; }, 3000);
+    </script>
   </body>
 </html>`;
 

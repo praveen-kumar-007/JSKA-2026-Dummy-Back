@@ -8,7 +8,8 @@ const {
     getApprovedInstitutions,
     updateStatus, 
     deleteInstitution, 
-    getInstitutionById 
+    getInstitutionById,
+    getInstitutionPublicById
 } = require('../controllers/instController');
 
 // Multer setup for temporary file storage
@@ -27,6 +28,8 @@ router.post(
 
 // Public Route: Approved institutions for Affiliated Institutions page
 router.get('/public', getApprovedInstitutions); // GET /api/institutions/public
+// Public Route: specific approved institution details
+router.get('/public/:id', getInstitutionPublicById); // GET /api/institutions/public/:id
 
 // Admin Routes (Institution Details tab)
 router.get('/:id', protect, admin, requirePermission('canAccessInstitutionDetails'), getInstitutionById);      // GET /api/institutions/:id
