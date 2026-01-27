@@ -7,8 +7,10 @@ const Gallery = require('../models/Gallery');
 
 // Simple dynamic sitemap generator
 router.get('/sitemap.xml', async (req, res) => {
+  console.log('[SITEMAP] Request received');
   try {
     const hostname = (process.env.FRONTEND_URL || 'https://dhanbadkabaddiassociation.tech').replace(/\/$/, '');
+    console.log('[SITEMAP] hostname', hostname);
 
     const staticUrls = [
       { loc: '/', priority: 1.0, changefreq: 'daily' },
@@ -36,31 +38,42 @@ router.get('/sitemap.xml', async (req, res) => {
 
     const urls = [];
 
+    const safeDateToIso = (d) => {
+      try {
+        if (!d) return null;
+        const date = new Date(d);
+        if (isNaN(date.getTime())) return null;
+        return date.toISOString();
+      } catch (e) {
+        return null;
+      }
+    };
+
     // add static urls
     staticUrls.forEach(u => urls.push({ loc: hostname + u.loc, changefreq: u.changefreq, priority: u.priority }));
 
     // add published news items
     newsList.forEach(n => {
       const loc = `${hostname}/news/${n._id}`;
-      urls.push({ loc, lastmod: (n.updatedAt || n.createdAt).toISOString(), priority: 0.8, images: n.images && n.images.length ? [n.images[0]] : [] });
+      urls.push({ loc, lastmod: safeDateToIso(n.updatedAt || n.createdAt), priority: 0.8, images: n.images && n.images.length ? [n.images[0]] : [] });
     });
 
     // add players (only approved players with assigned idNo, map to public ID card URL)
     playerList.filter(p => p.idNo && p.status === 'Approved').forEach(p => {
       const loc = `${hostname}/id-card/${encodeURIComponent(p.idNo)}`;
-      urls.push({ loc, lastmod: (p.updatedAt || p.createdAt).toISOString(), priority: 0.9 });
+      urls.push({ loc, lastmod: safeDateToIso(p.updatedAt || p.createdAt), priority: 0.9 });
     });
 
     // institutions (only include approved institutions if public)
     instList.filter(i => i.status === 'Approved').forEach(i => {
       const loc = `${hostname}/institution/${i._id}`;
-      urls.push({ loc, lastmod: (i.updatedAt || i.createdAt).toISOString(), priority: 0.9 });
+      urls.push({ loc, lastmod: safeDateToIso(i.updatedAt || i.createdAt), priority: 0.9 });
     });
 
     // gallery items
     galleryList.forEach(g => {
       const loc = `${hostname}/gallery/${g._id}`;
-      urls.push({ loc, lastmod: (g.updatedAt || g.createdAt).toISOString(), priority: 0.6, images: g.images && g.images.length ? [g.images[0]] : [] });
+      urls.push({ loc, lastmod: safeDateToIso(g.updatedAt || g.createdAt), priority: 0.6, images: g.images && g.images.length ? [g.images[0]] : [] });
     });
 
     // build xml

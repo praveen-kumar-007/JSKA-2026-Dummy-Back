@@ -109,6 +109,10 @@ app.use('/api/auth', authRoutes);
 const sitemapRoutes = require('./routes/sitemapRoutes');
 app.use('/', sitemapRoutes);
 
+// Share / Preview pages for static routes (help crawlers read meta tags)
+const sharePageRoutes = require('./routes/sharePageRoutes');
+app.use('/', sharePageRoutes);
+
 // 7. Error Handling Middleware
 app.use(errorHandler);
 
