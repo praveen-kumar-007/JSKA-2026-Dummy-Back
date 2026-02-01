@@ -14,6 +14,7 @@ const adminSchema = new mongoose.Schema({
         canAccessChampions: { type: Boolean, default: true },            // "Our Champions" tab
         canAccessReferees: { type: Boolean, default: true },             // "Referee Board" tab
         canAccessTechnicalOfficials: { type: Boolean, default: true },   // "Technical Officials" tab
+        canAccessUnifiedSearch: { type: Boolean, default: true },        // "Unified Search" page
         // Second row tiles
         canAccessPlayerDetails: { type: Boolean, default: true },        // "Player Details" tab
         canAccessInstitutionDetails: { type: Boolean, default: true },   // "Institution Details" tab

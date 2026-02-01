@@ -26,6 +26,10 @@ const SettingSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  allowUnifiedSearch: {
+    type: Boolean,
+    default: true,
+  },
   // New export toggles
   // Unified export control: when false, all export UI/features should be disabled
   allowExportAll: {
