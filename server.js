@@ -89,6 +89,40 @@ app.get('/', (req, res) => {
     });
 });
 
+// Image proxy to avoid CORS issues in client-side exports
+app.get('/api/proxy/image', async (req, res) => {
+    const imageUrl = req.query.url;
+    if (!imageUrl) {
+        return res.status(400).json({ success: false, message: 'Missing url parameter' });
+    }
+
+    let parsed;
+    try {
+        parsed = new URL(imageUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+            return res.status(400).json({ success: false, message: 'Invalid protocol' });
+        }
+    } catch (e) {
+        return res.status(400).json({ success: false, message: 'Invalid url' });
+    }
+
+    try {
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+            return res.status(502).json({ success: false, message: 'Failed to fetch image' });
+        }
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        const buffer = Buffer.from(await response.arrayBuffer());
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.status(200).send(buffer);
+    } catch (err) {
+        console.error('Proxy image error:', err);
+        return res.status(500).json({ success: false, message: 'Proxy error' });
+    }
+});
+
 app.use('/api/institutions', instRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/news', newsRoutes);
