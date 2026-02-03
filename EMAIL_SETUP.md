@@ -1,6 +1,6 @@
 Gmail Email Setup for DDKA Backend
 
-This project uses SendGrid API (recommended on Render) or nodemailer with Gmail SMTP to send registration status emails (application received, approval, rejection, deletion).
+This project uses Brevo API (recommended on Render) or nodemailer with Gmail SMTP to send registration status emails (application received, approval, rejection, deletion).
 
 1) Install dependencies (in DDKA-back):
    npm install
@@ -12,10 +12,12 @@ This project uses SendGrid API (recommended on Render) or nodemailer with Gmail 
    # EMAIL_HOST=smtp.gmail.com
    # EMAIL_PORT=587
   # Emails are controlled by the Admin Dashboard toggle (MAIL) and valid credentials.
-  # Recommended on Render (free tier): SendGrid API
-  SENDGRID_API_KEY=your_sendgrid_api_key
-  # Optional: verified sender email for SendGrid
+  # Recommended on Render (free tier): Brevo API
+  BREVO_API_KEY=your_brevo_api_key
+  # Verified sender email for Brevo
   EMAIL_FROM=your_verified_sender@yourdomain.com
+  # Optional sender name
+  EMAIL_FROM_NAME=DDKA
    # If your password contains spaces, wrap it in quotes:
      # EMAIL_PASS="your password with spaces"
 

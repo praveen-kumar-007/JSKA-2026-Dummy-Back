@@ -1,10 +1,9 @@
 const nodemailer = require('nodemailer');
-const sendgrid = require('@sendgrid/mail');
 const Setting = require('../models/Setting');
 
 // Email sending is controlled by the admin toggle (emailEnabled).
-// Prefer SendGrid API when SENDGRID_API_KEY is set (works on Render free tier).
-// SMTP is used only if SendGrid is not configured.
+// Prefer Brevo API when BREVO_API_KEY is set (works on Render free tier).
+// SMTP is used only if Brevo is not configured.
 
 // Uses Gmail SMTP. Recommended: generate an App Password and set EMAIL_USER and EMAIL_PASS in your .env
 // By default we use port 587 (STARTTLS) to improve compatibility with hosting providers that often block 465 or 25.
@@ -14,7 +13,7 @@ const Setting = require('../models/Setting');
 // EMAIL_PORT=587
 
 let transporter = null;
-if (!process.env.SENDGRID_API_KEY && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+if (!process.env.BREVO_API_KEY && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
@@ -52,12 +51,8 @@ if (!process.env.SENDGRID_API_KEY && process.env.EMAIL_USER && process.env.EMAIL
     }
     });
   }
-} else if (!process.env.SENDGRID_API_KEY) {
+} else if (!process.env.BREVO_API_KEY) {
   console.warn('SMTP credentials are missing (EMAIL_USER/EMAIL_PASS). Emails will be skipped until configured.');
-}
-
-if (process.env.SENDGRID_API_KEY) {
-  sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 const isEmailEnabled = async () => {
@@ -84,19 +79,45 @@ const sendWithFallback = async (mailOptions) => {
     ...mailOptions
   };
 
-  if (process.env.SENDGRID_API_KEY) {
+  if (process.env.BREVO_API_KEY) {
     try {
-      const [result] = await sendgrid.send({
-        to: mail.to,
-        from: mail.from,
+      const toList = Array.isArray(mail.to) ? mail.to : String(mail.to || '').split(',').map(v => v.trim()).filter(Boolean);
+      const payload = {
+        sender: {
+          email: mail.from,
+          name: process.env.EMAIL_FROM_NAME || 'DDKA'
+        },
+        to: toList.map(email => ({ email })),
         subject: mail.subject,
-        text: mail.text,
-        html: mail.html,
-        attachments: mail.attachments || []
+        textContent: mail.text || undefined,
+        htmlContent: mail.html || undefined,
+        attachment: Array.isArray(mail.attachments)
+          ? mail.attachments
+              .filter(a => a && (a.content || a.contentBase64) && (a.filename || a.name))
+              .map(a => ({
+                name: a.filename || a.name,
+                content: a.contentBase64 || (Buffer.isBuffer(a.content) ? a.content.toString('base64') : a.content)
+              }))
+          : undefined
+      };
+
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': process.env.BREVO_API_KEY
+        },
+        body: JSON.stringify(payload)
       });
-      return result;
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Brevo send failed: ${res.status} ${errText}`);
+      }
+
+      return await res.json();
     } catch (err) {
-      console.error('SendGrid send failed:', err);
+      console.error('Brevo send failed:', err);
       throw err;
     }
   }
