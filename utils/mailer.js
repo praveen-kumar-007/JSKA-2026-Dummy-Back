@@ -3,11 +3,25 @@ const mongoose = require('mongoose');
 const Setting = require('../models/Setting');
 
 const logoUrl = process.env.EMAIL_LOGO_URL;
-const logoHtml = logoUrl
-  ? `<div style="text-align:center; margin-bottom:16px;">
+const logoFooterHtml = logoUrl
+  ? `<div style="text-align:center; margin-top:20px;">
       <img src="${logoUrl}" alt="DDKA" style="max-width:140px; height:auto;" />
     </div>`
   : '';
+
+const wrapHtml = (innerHtml) => `
+  <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.6; color:#111; max-width:680px;">
+    ${innerHtml}
+    ${logoFooterHtml}
+  </div>
+`;
+
+const escapeHtml = (value) => String(value || '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 // Email sending is controlled by the admin toggle (emailEnabled).
 // Prefer Brevo API when BREVO_API_KEY is set (works on Render free tier).
@@ -191,8 +205,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
 
   if (entityType === 'institution') {
     const subject = '🎉 Institution Approved – Dhanbad District Kabaddi Association';
-    const html = `
-      <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.5; color:#111; max-width:680px;">
+    const html = wrapHtml(`
         <p>Dear ${name || 'Applicant'},</p>
         <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
         <p>We are pleased to inform you that your institution registration has been <strong>approved</strong>.</p>
@@ -201,16 +214,13 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
         <p>With best wishes,<br />
         <strong>Dhanbad District Kabaddi Association</strong><br />
         Official Registration Team</p>
-        ${logoHtml}
-      </div>
-    `;
+    `);
     const text = `Dear ${name || 'Applicant'},\n\nGreetings from Dhanbad District Kabaddi Association!\n\nWe are pleased to inform you that your institution registration has been approved.\n\nAll details and documents submitted by you have been verified and found correct.\n\nWith best wishes,\nDhanbad District Kabaddi Association\nOfficial Registration Team`;
     return await sendWithFallback({ to, subject, text, html });
   }
 
   const subject = '🎉 Registration Approved – Dhanbad District Kabaddi Association';
-  const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.5; color:#111; max-width:680px;">
+  const html = wrapHtml(`
       <p>Dear ${name || 'Player'},</p>
 
       <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
@@ -229,9 +239,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
       <p>With best wishes,<br />
       <strong>Dhanbad District Kabaddi Association</strong><br />
       Official Registration Team</p>
-      ${logoHtml}
-    </div>
-  `;
+  `);
 
   const text = `Dear ${name || 'Player'},\n\n` +
     `Greetings from Dhanbad District Kabaddi Association!\n\n` +
@@ -249,8 +257,7 @@ const sendRejectionEmail = async ({ to, name, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
   const subject = `Registration Update – DDKA`;
-  const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.5; color:#111; max-width:680px;">
+  const html = wrapHtml(`
       <p>Dear ${name || 'Applicant'},</p>
       <p>Thank you for your ${label} submission to the Dhanbad District Kabaddi Association.</p>
       <p>After review, we regret to inform you that your ${label} has been <strong>rejected</strong>.</p>
@@ -258,9 +265,7 @@ const sendRejectionEmail = async ({ to, name, entityType = 'player' } = {}) => {
       <br />
       <p>Regards,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
-      ${logoHtml}
-    </div>
-  `;
+  `);
   const text = `Dear ${name || 'Applicant'},\n\nThank you for your ${label} submission to the Dhanbad District Kabaddi Association.\n\nAfter review, we regret to inform you that your ${label} has been rejected.\nIf you believe this was a mistake, please contact us for clarification.\n\nRegards,\nDhanbad District Kabaddi Association`;
   return await sendWithFallback({ to, subject, text, html });
 };
@@ -269,17 +274,14 @@ const sendDeletionEmail = async ({ to, name, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
   const subject = `Record Deleted – DDKA`;
-  const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.5; color:#111; max-width:680px;">
+  const html = wrapHtml(`
       <p>Dear ${name || 'Applicant'},</p>
       <p>This is to inform you that your ${label} record has been <strong>deleted</strong> from our system.</p>
       <p>If you believe this was a mistake, please contact us and we will assist you.</p>
       <br />
       <p>Regards,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
-      ${logoHtml}
-    </div>
-  `;
+  `);
   const text = `Dear ${name || 'Applicant'},\n\nThis is to inform you that your ${label} record has been deleted from our system.\n\nIf you believe this was a mistake, please contact us and we will assist you.\n\nRegards,\nDhanbad District Kabaddi Association`;
   return await sendWithFallback({ to, subject, text, html });
 };
@@ -288,17 +290,14 @@ const sendApplicationReceivedEmail = async ({ to, name, entityType = 'player' } 
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
   const subject = `Application Received – DDKA`;
-  const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.5; color:#111; max-width:680px;">
+  const html = wrapHtml(`
       <p>Dear ${name || 'Applicant'},</p>
       <p>We have received your ${label} application.</p>
       <p>Your data and records are <strong>under verification</strong>. After successful verification, you will receive further information from us.</p>
       <br />
       <p>Thank you,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
-      ${logoHtml}
-    </div>
-  `;
+  `);
   const text = `Dear ${name || 'Applicant'},\n\nWe have received your ${label} application.\nYour data and records are under verification. After successful verification, you will receive further information from us.\n\nThank you,\nDhanbad District Kabaddi Association`;
   return await sendWithFallback({ to, subject, text, html });
 };
@@ -306,13 +305,12 @@ const sendApplicationReceivedEmail = async ({ to, name, entityType = 'player' } 
 const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const subject = `Thank you for your donation to DDKA`;
-  const html = `<div style="font-family: Arial, Helvetica, sans-serif;">
+  const html = wrapHtml(`
     <p>Dear ${name || 'Supporter'},</p>
     <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association.</p>
     <p>We will process your contribution and send an official receipt shortly.</p>
     <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
-    ${logoHtml}
-  </div>`;
+  `);
   const text = `Dear ${name || 'Supporter'},\n\nThank you for your generous donation of ₹${amount} to Dhanbad District Kabaddi Association. We will process your contribution and send an official receipt shortly.\n\nWith gratitude,\nDDKA`;
 
   return await sendWithFallback({ to, subject, text, html, attachments: attachments || [] });
@@ -323,5 +321,22 @@ module.exports = {
   sendRejectionEmail,
   sendDeletionEmail,
   sendApplicationReceivedEmail,
-  sendDonationEmail
+  sendDonationEmail,
+  sendCustomEmail: async ({ to, subject, message, name } = {}) => {
+    if (!to) throw new Error('Recipient email is required');
+    if (!subject) throw new Error('Subject is required');
+    const safeText = String(message || '').trim();
+    const greetingName = (name || '').trim() || 'Sir/Madam';
+    const htmlMessage = safeText
+      ? safeText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('')
+      : '<p></p>';
+    const htmlBody = `
+      <p>Respected ${escapeHtml(greetingName)},</p>
+      ${htmlMessage}
+      <p>With regards,<br/>Dhanbad District Kabaddi Association</p>
+    `;
+    const html = wrapHtml(htmlBody);
+    const text = `Respected ${greetingName},\n\n${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`;
+    return await sendWithFallback({ to, subject, text, html });
+  }
 };

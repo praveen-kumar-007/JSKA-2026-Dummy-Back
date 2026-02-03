@@ -21,6 +21,7 @@ const adminSchema = new mongoose.Schema({
         // Donations and Important Docs
         canAccessDonations: { type: Boolean, default: true },            // Donations management
         canAccessImportantDocs: { type: Boolean, default: true },       // Important Docs dropdown
+        canAccessBulkEmail: { type: Boolean, default: true },           // Bulk Email page
         // Deletes remain reserved for superadmin, but is still permission-controlled for UI
         canDelete: { type: Boolean, default: false }
     }

@@ -18,6 +18,10 @@ This project uses Brevo API (recommended on Render) or nodemailer with Gmail SMT
   EMAIL_FROM=your_verified_sender@yourdomain.com
   # Optional sender name
   EMAIL_FROM_NAME=DDKA
+  # Optional reply-to address (where recipients should contact you)
+  EMAIL_REPLY_TO=your_gmail@gmail.com
+  # Optional logo shown in all emails (public image URL)
+  EMAIL_LOGO_URL=https://yourdomain.com/logo.png
    # If your password contains spaces, wrap it in quotes:
      # EMAIL_PASS="your password with spaces"
 

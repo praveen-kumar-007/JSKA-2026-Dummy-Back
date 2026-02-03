@@ -1,6 +1,7 @@
 const express = require('express');
 const { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin } = require('../controllers/adminController');
-const { protect, admin, isSuperAdmin } = require('../middleware/authMiddleware');
+const { getBulkRecipients, sendBulkEmail } = require('../controllers/bulkEmailController');
+const { protect, admin, isSuperAdmin, requirePermission } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -15,5 +16,7 @@ router.get('/me', protect, admin, getCurrentAdmin);
 // Superadmin-only routes
 router.get('/', protect, isSuperAdmin, listAdmins);
 router.patch('/:id', protect, isSuperAdmin, updateAdmin);
+router.get('/bulk-email/recipients', protect, requirePermission('canAccessBulkEmail'), getBulkRecipients);
+router.post('/bulk-email/send', protect, requirePermission('canAccessBulkEmail'), sendBulkEmail);
 
 module.exports = router;
