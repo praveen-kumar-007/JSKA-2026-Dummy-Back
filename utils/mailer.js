@@ -1,8 +1,10 @@
 const nodemailer = require('nodemailer');
+const sendgrid = require('@sendgrid/mail');
 const Setting = require('../models/Setting');
 
-// SMTP is controlled by the admin toggle (emailEnabled) and valid credentials.
-// No env flag is required for enabling; credentials + toggle control sending.
+// Email sending is controlled by the admin toggle (emailEnabled).
+// Prefer SendGrid API when SENDGRID_API_KEY is set (works on Render free tier).
+// SMTP is used only if SendGrid is not configured.
 
 // Uses Gmail SMTP. Recommended: generate an App Password and set EMAIL_USER and EMAIL_PASS in your .env
 // By default we use port 587 (STARTTLS) to improve compatibility with hosting providers that often block 465 or 25.
@@ -12,7 +14,7 @@ const Setting = require('../models/Setting');
 // EMAIL_PORT=587
 
 let transporter = null;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+if (!process.env.SENDGRID_API_KEY && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
@@ -50,8 +52,12 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     }
     });
   }
-} else {
+} else if (!process.env.SENDGRID_API_KEY) {
   console.warn('SMTP credentials are missing (EMAIL_USER/EMAIL_PASS). Emails will be skipped until configured.');
+}
+
+if (process.env.SENDGRID_API_KEY) {
+  sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
 const isEmailEnabled = async () => {
@@ -73,15 +79,32 @@ const sendWithFallback = async (mailOptions) => {
     console.log(`Skipping email to ${to} because email sending is disabled`);
     return { skipped: true, to };
   }
+  const mail = {
+    from: mailOptions.from || process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    ...mailOptions
+  };
+
+  if (process.env.SENDGRID_API_KEY) {
+    try {
+      const [result] = await sendgrid.send({
+        to: mail.to,
+        from: mail.from,
+        subject: mail.subject,
+        text: mail.text,
+        html: mail.html,
+        attachments: mail.attachments || []
+      });
+      return result;
+    } catch (err) {
+      console.error('SendGrid send failed:', err);
+      throw err;
+    }
+  }
+
   if (!transporter) {
     console.warn('SMTP transporter is not configured; skipping email.');
     return { skipped: true, reason: 'transporter-not-configured' };
   }
-
-  const mail = {
-    from: mailOptions.from || process.env.EMAIL_USER,
-    ...mailOptions
-  };
 
   try {
     return await transporter.sendMail(mail);
