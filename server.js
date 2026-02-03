@@ -44,6 +44,7 @@ const allowedOrigins = [
     'http://localhost:3001',
     // Production Deployments
     'https://ddka.vercel.app',
+    'https://ddka-a6bglnrea-praveen-kumar.vercel.app',
     'https://dhanbadkabaddiassociation.tech',
     'https://www.dhanbadkabaddiassociation.tech',
     // Environment Variable
@@ -59,7 +60,9 @@ app.use(cors({
         const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
         const allowed = allowedOrigins.map(o => o.replace(/\/$/, '').toLowerCase());
 
-        if (allowed.includes(normalizedOrigin)) {
+        const isVercelPreview = normalizedOrigin.endsWith('.vercel.app');
+
+        if (allowed.includes(normalizedOrigin) || isVercelPreview) {
             callback(null, true);
         } else {
             // Warn only in development
