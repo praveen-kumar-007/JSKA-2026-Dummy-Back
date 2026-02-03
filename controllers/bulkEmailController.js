@@ -95,7 +95,7 @@ exports.sendBulkEmail = async (req, res) => {
     for (const r of uniqueRecipients) {
       try {
         if (!r.email) throw new Error('Missing email');
-        await sendCustomEmail({ to: r.email, subject, message, name: r.name });
+        await sendCustomEmail({ to: r.email, subject, message, name: r.name, noGreeting: r.noGreeting });
         results.sent += 1;
       } catch (err) {
         results.failed += 1;

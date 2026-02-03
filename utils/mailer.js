@@ -322,7 +322,7 @@ module.exports = {
   sendDeletionEmail,
   sendApplicationReceivedEmail,
   sendDonationEmail,
-  sendCustomEmail: async ({ to, subject, message, name } = {}) => {
+  sendCustomEmail: async ({ to, subject, message, name, noGreeting } = {}) => {
     if (!to) throw new Error('Recipient email is required');
     if (!subject) throw new Error('Subject is required');
     const safeText = String(message || '').trim();
@@ -330,13 +330,20 @@ module.exports = {
     const htmlMessage = safeText
       ? safeText.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('')
       : '<p></p>';
-    const htmlBody = `
+    const htmlBody = noGreeting
+      ? `
+      ${htmlMessage}
+      <p>With regards,<br/>Dhanbad District Kabaddi Association</p>
+    `
+      : `
       <p>Respected ${escapeHtml(greetingName)},</p>
       ${htmlMessage}
       <p>With regards,<br/>Dhanbad District Kabaddi Association</p>
     `;
     const html = wrapHtml(htmlBody);
-    const text = `Respected ${greetingName},\n\n${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`;
+    const text = noGreeting
+      ? `${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`
+      : `Respected ${greetingName},\n\n${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`;
     return await sendWithFallback({ to, subject, text, html });
   }
 };
