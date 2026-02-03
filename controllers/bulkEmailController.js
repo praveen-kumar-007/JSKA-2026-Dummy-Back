@@ -1,6 +1,8 @@
 const Player = require('../models/Player');
 const Institution = require('../models/Institution');
 const TechnicalOfficial = require('../models/TechnicalOfficial');
+const NewsletterSubscription = require('../models/NewsletterSubscription');
+const ContactMessage = require('../models/ContactMessage');
 const { sendCustomEmail } = require('../utils/mailer');
 
 const mapRecipient = (item, type, nameKey) => ({
@@ -13,16 +15,41 @@ const mapRecipient = (item, type, nameKey) => ({
 
 exports.getBulkRecipients = async (req, res) => {
   try {
-    const [players, institutions, officials] = await Promise.all([
+    const [players, institutions, officials, newsletters, contacts] = await Promise.all([
       Player.find({ email: { $exists: true, $ne: '' } }).select('fullName email status').lean(),
       Institution.find({ email: { $exists: true, $ne: '' } }).select('instName email status').lean(),
-      TechnicalOfficial.find({ email: { $exists: true, $ne: '' } }).select('candidateName email status').lean()
+      TechnicalOfficial.find({ email: { $exists: true, $ne: '' } }).select('candidateName email status').lean(),
+      NewsletterSubscription.find({ email: { $exists: true, $ne: '' } }).select('email').lean(),
+      ContactMessage.find({ email: { $exists: true, $ne: '' } }).select('name email status').lean()
     ]);
 
     const recipients = [
-      ...players.map(p => mapRecipient(p, 'Player', 'fullName')),
-      ...institutions.map(i => mapRecipient(i, 'Institution', 'instName')),
-      ...officials.map(o => mapRecipient(o, 'Technical Official', 'candidateName'))
+      ...players.map(p => ({
+        ...mapRecipient(p, 'Player', 'fullName'),
+        status: p.status || 'Pending'
+      })),
+      ...institutions.map(i => ({
+        ...mapRecipient(i, 'Institution', 'instName'),
+        status: i.status || 'Pending'
+      })),
+      ...officials.map(o => ({
+        ...mapRecipient(o, 'Technical Official', 'candidateName'),
+        status: o.status || 'Pending'
+      })),
+      ...newsletters.map(n => ({
+        id: n._id,
+        type: 'Newsletter',
+        name: 'Newsletter Subscriber',
+        email: n.email,
+        status: 'Subscribed'
+      })),
+      ...contacts.map(c => ({
+        id: c._id,
+        type: 'Contact',
+        name: c.name || '-',
+        email: c.email,
+        status: c.status || 'New'
+      }))
     ];
 
     res.status(200).json({ success: true, data: recipients });
