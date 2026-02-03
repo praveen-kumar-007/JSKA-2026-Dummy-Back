@@ -14,7 +14,14 @@ const { sendApprovalEmail } = require('../utils/mailer');
       return;
     }
     console.log('Sending test approval email to', to);
-    await sendApprovalEmail({ to, name: 'DDKA Test', idNo: 'TEST-000' });
+    await sendApprovalEmail({
+      to,
+      name: 'DDKA Test',
+      idNo: 'TEST-000',
+      entityType: 'player',
+      loginId: 'test@example.com',
+      loginPassword: '9999999999',
+    });
     console.log('Test email sent successfully to', to);
     process.exitCode = 0;
   } catch (err) {

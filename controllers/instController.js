@@ -117,7 +117,13 @@ const updateStatus = async (req, res) => {
         if (updated.email && status !== previousStatus) {
             if (status === 'Approved') {
                 try {
-                    const result = await sendApprovalEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
+                    const result = await sendApprovalEmail({
+                        to: updated.email,
+                        name: updated.instName,
+                        entityType: 'institution',
+                        loginId: updated.email,
+                        loginPassword: updated.officePhone || updated.altPhone,
+                    });
                     if (result && result.skipped) {
                         emailSkipped = true;
                         emailSkipReason = result.reason || 'disabled';

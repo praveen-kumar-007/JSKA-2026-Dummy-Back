@@ -215,6 +215,8 @@ exports.updateTechnicalOfficialStatus = async (req, res) => {
             to: updated.email,
             name: updated.candidateName,
             entityType: 'official',
+            loginId: updated.email,
+            loginPassword: updated.mobile,
           });
           if (result && result.skipped) {
             emailSkipped = true;

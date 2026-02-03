@@ -219,7 +219,14 @@ exports.updatePlayerStatus = async (req, res) => {
         if (updated.email && status !== previousStatus) {
             if (status === 'Approved') {
                 try {
-                    const result = await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo, entityType: 'player' });
+                    const result = await sendApprovalEmail({
+                        to: updated.email,
+                        name: updated.fullName,
+                        idNo: updated.idNo,
+                        entityType: 'player',
+                        loginId: updated.email,
+                        loginPassword: updated.phone,
+                    });
                     if (result && result.skipped) {
                         emailSkipped = true;
                         emailSkipReason = result.reason || 'disabled';

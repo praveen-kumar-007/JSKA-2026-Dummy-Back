@@ -205,12 +205,12 @@ const buildEntityLabel = (entityType) => {
   return 'player registration';
 };
 
-const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {}) => {
+const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player', loginId, loginPassword } = {}) => {
   if (!to) throw new Error('Recipient email is required');
 
   if (entityType === 'institution') {
     const tpl = templates.institutionApproval;
-    const ctx = { name: name || 'Applicant' };
+    const ctx = { name: name || 'Applicant', loginId, loginPassword };
     const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
     const html = wrapHtml(tpl.html(ctx));
     const text = tpl.text(ctx);
@@ -219,7 +219,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
 
   if (entityType === 'official') {
     const tpl = templates.officialApproval;
-    const ctx = { name: name || 'Applicant' };
+    const ctx = { name: name || 'Applicant', loginId, loginPassword };
     const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
     const html = wrapHtml(tpl.html(ctx));
     const text = tpl.text(ctx);
@@ -227,7 +227,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
   }
 
   const tpl = templates.playerApproval;
-  const ctx = { name: name || 'Player' };
+  const ctx = { name: name || 'Player', loginId, loginPassword };
   const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
   const html = wrapHtml(tpl.html(ctx));
   const text = tpl.text(ctx);

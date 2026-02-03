@@ -3,10 +3,12 @@
 
 const wrapLines = (lines) => lines.filter(Boolean).join('\n');
 
+const LOGIN_URL = 'https://dhanbadkabaddiassociation.tech/login';
+
 const templates = {
   playerApproval: {
     subject: ({ name = 'Player' } = {}) => `Registration Approved – ${name}`,
-    html: ({ name = 'Player' } = {}) => `
+    html: ({ name = 'Player', loginId, loginPassword } = {}) => `
       <p>Dear ${name},</p>
 
       <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
@@ -15,7 +17,15 @@ const templates = {
 
       <p>All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.</p>
 
-      <p>Please visit the <strong>DDKA official website</strong> to check your details. You can log in using your <strong>Email ID</strong> and <strong>Password</strong> to access your ID card and other assets from DDKA.</p>
+      <p>Please visit the <strong>DDKA official website</strong> to check your details and download your ID card.</p>
+
+      <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
+
+      <p><strong>Login details for Player Portal:</strong><br/>
+      Login ID: <strong>${loginId || 'your registered email ID'}</strong><br/>
+      Password: <strong>${loginPassword || 'your registered mobile number'}</strong></p>
+
+      <p>You will need to enter the above details exactly as registered to access your account and ID card.</p>
 
       <p>We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.</p>
 
@@ -24,7 +34,7 @@ const templates = {
       <strong>Dhanbad District Kabaddi Association</strong><br />
       Official Registration Team</p>
     `,
-    text: ({ name = 'Player' } = {}) => wrapLines([
+    text: ({ name = 'Player', loginId, loginPassword } = {}) => wrapLines([
       `Dear ${name},`,
       '',
       'Greetings from Dhanbad District Kabaddi Association!',
@@ -33,7 +43,14 @@ const templates = {
       '',
       'All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.',
       '',
-      'Please visit the DDKA official website to check your details. You can log in using your Email ID and Password to access your ID card and other assets from DDKA.',
+      'Please visit the DDKA official website to check your details and download your ID card.',
+      `Login URL: ${LOGIN_URL}`,
+      '',
+      `Login details for Player Portal:`,
+      `Login ID: ${loginId || 'your registered email ID'}`,
+      `Password: ${loginPassword || 'your registered mobile number'}`,
+      '',
+      'You will need to enter the above details exactly as registered to access your account and ID card.',
       '',
       'We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.',
       '',
@@ -45,17 +62,24 @@ const templates = {
 
   institutionApproval: {
     subject: ({ name = 'Applicant' } = {}) => `Institution Registration Approved – ${name}`,
-    html: ({ name = 'Applicant' } = {}) => `
+    html: ({ name = 'Applicant', loginId, loginPassword } = {}) => `
       <p>Dear ${name},</p>
       <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
       <p>We are pleased to inform you that your institution registration has been <strong>approved</strong>.</p>
       <p>All details and documents submitted by you have been verified and found correct.</p>
+      <p>You can log in to the <strong>DDKA Institution Portal</strong> to view and manage your institution details.</p>
+
+      <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
+
+      <p><strong>Login details for Institution Portal:</strong><br/>
+      Login ID: <strong>${loginId || 'your registered institution email ID'}</strong><br/>
+      Password: <strong>${loginPassword || 'your registered office / alternate phone number'}</strong></p>
       <br />
       <p>With best wishes,<br />
       <strong>Dhanbad District Kabaddi Association</strong><br />
       Official Registration Team</p>
     `,
-    text: ({ name = 'Applicant' } = {}) => wrapLines([
+    text: ({ name = 'Applicant', loginId, loginPassword } = {}) => wrapLines([
       `Dear ${name},`,
       '',
       'Greetings from Dhanbad District Kabaddi Association!',
@@ -64,37 +88,59 @@ const templates = {
       '',
       'All details and documents submitted by you have been verified and found correct.',
       '',
+      'You can log in to the DDKA Institution Portal to view and manage your institution details.',
+      `Login URL: ${LOGIN_URL}`,
+      '',
+      'Login details for Institution Portal:',
+      `Login ID: ${loginId || 'your registered institution email ID'}`,
+      `Password: ${loginPassword || 'your registered office / alternate phone number'}`,
+      '',
       'With best wishes,',
       'Dhanbad District Kabaddi Association',
       'Official Registration Team',
     ]),
   },
 
-    officialApproval: {
-      subject: ({ name = 'Applicant' } = {}) => `Technical Official Registration Approved – ${name}`,
-      html: ({ name = 'Applicant' } = {}) => `
-        <p>Dear ${name},</p>
-        <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
-        <p>We are happy to inform you that your <strong>Technical Official registration</strong> has been <strong>approved</strong>.</p>
-        <p>Your details and documents have been verified and accepted as per our guidelines.</p>
-        <br />
-        <p>With best wishes,<br />
-        <strong>Dhanbad District Kabaddi Association</strong><br />
-        Technical Officials Panel</p>
-      `,
-      text: ({ name = 'Applicant' } = {}) => wrapLines([
-        `Dear ${name},`,
-        '',
-        'Greetings from Dhanbad District Kabaddi Association!',
-        '',
-        'We are happy to inform you that your Technical Official registration has been approved.',
-        'Your details and documents have been verified and accepted as per our guidelines.',
-        '',
-        'With best wishes,',
-        'Dhanbad District Kabaddi Association',
-        'Technical Officials Panel',
-      ]),
-    },
+  officialApproval: {
+    subject: ({ name = 'Applicant' } = {}) => `Technical Official Registration Approved – ${name}`,
+    html: ({ name = 'Applicant', loginId, loginPassword } = {}) => `
+      <p>Dear ${name},</p>
+      <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
+      <p>We are happy to inform you that your <strong>Technical Official registration</strong> has been <strong>approved</strong>.</p>
+      <p>Your details and documents have been verified and accepted as per our guidelines.</p>
+
+      <p><strong>Login details for Technical Official Portal:</strong><br/>
+      Login ID: <strong>${loginId || 'your registered email ID'}</strong><br/>
+      Password: <strong>${loginPassword || 'your registered mobile number'}</strong></p>
+
+      <p>You will need to enter the above details exactly as registered to access your account.</p>
+
+      <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
+      <br />
+      <p>With best wishes,<br />
+      <strong>Dhanbad District Kabaddi Association</strong><br />
+      Technical Officials Panel</p>
+    `,
+    text: ({ name = 'Applicant', loginId, loginPassword } = {}) => wrapLines([
+      `Dear ${name},`,
+      '',
+      'Greetings from Dhanbad District Kabaddi Association!',
+      '',
+      'We are happy to inform you that your Technical Official registration has been approved.',
+      'Your details and documents have been verified and accepted as per our guidelines.',
+      '',
+      'Login details for Technical Official Portal:',
+      `Login ID: ${loginId || 'your registered email ID'}`,
+      `Password: ${loginPassword || 'your registered mobile number'}`,
+      `Login URL: ${LOGIN_URL}`,
+      '',
+      'You will need to enter the above details exactly as registered to access your account.',
+      '',
+      'With best wishes,',
+      'Dhanbad District Kabaddi Association',
+      'Technical Officials Panel',
+    ]),
+  },
 
   genericRejection: {
     subject: ({ name = 'Applicant' } = {}) => `Registration Update – ${name}`,
