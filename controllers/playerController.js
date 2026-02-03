@@ -192,27 +192,39 @@ exports.updatePlayerStatus = async (req, res) => {
         // Send status emails (only when status changes)
         let emailSent = false;
         let emailType = null;
+        let emailSkipped = false;
+        let emailSkipReason = null;
         if (updated.email && status !== previousStatus) {
             if (status === 'Approved') {
                 try {
-                    await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo, entityType: 'player' });
-                    emailSent = true;
-                    emailType = 'approval';
+                    const result = await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo, entityType: 'player' });
+                    if (result && result.skipped) {
+                        emailSkipped = true;
+                        emailSkipReason = result.reason || 'disabled';
+                    } else {
+                        emailSent = true;
+                        emailType = 'approval';
+                    }
                 } catch (err) {
                     console.error('Failed to send approval email:', err);
                 }
             } else if (status === 'Rejected') {
                 try {
-                    await sendRejectionEmail({ to: updated.email, name: updated.fullName, entityType: 'player' });
-                    emailSent = true;
-                    emailType = 'rejection';
+                    const result = await sendRejectionEmail({ to: updated.email, name: updated.fullName, entityType: 'player' });
+                    if (result && result.skipped) {
+                        emailSkipped = true;
+                        emailSkipReason = result.reason || 'disabled';
+                    } else {
+                        emailSent = true;
+                        emailType = 'rejection';
+                    }
                 } catch (err) {
                     console.error('Failed to send rejection email:', err);
                 }
             }
         }
 
-        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent, emailType });
+        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent, emailType, emailSkipped, emailSkipReason });
     } catch (error) {
         console.error('updatePlayerStatus error:', error);
         res.status(500).json({ success: false, message: "Update failed" });

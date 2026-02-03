@@ -76,27 +76,21 @@ exports.sendBulkEmail = async (req, res) => {
       sent: 0,
       failed: 0,
       failures: [],
-      skippedDuplicates: 0
+      skipped: 0,
+      skippedReasons: []
     };
 
-    const seen = new Set();
-    const uniqueRecipients = [];
     for (const r of recipients) {
-      const email = String(r.email || '').trim().toLowerCase();
-      if (!email) continue;
-      if (seen.has(email)) {
-        results.skippedDuplicates += 1;
-        continue;
-      }
-      seen.add(email);
-      uniqueRecipients.push({ ...r, email });
-    }
-
-    for (const r of uniqueRecipients) {
       try {
-        if (!r.email) throw new Error('Missing email');
-        await sendCustomEmail({ to: r.email, subject, message, name: r.name, noGreeting: r.noGreeting });
-        results.sent += 1;
+        const email = String(r.email || '').trim().toLowerCase();
+        if (!email) throw new Error('Missing email');
+        const result = await sendCustomEmail({ to: email, subject, message, name: r.name, noGreeting: r.noGreeting });
+        if (result && result.skipped) {
+          results.skipped += 1;
+          results.skippedReasons.push({ email, reason: result.reason || 'disabled' });
+        } else {
+          results.sent += 1;
+        }
       } catch (err) {
         results.failed += 1;
         results.failures.push({ email: r.email, error: err.message || 'Failed' });

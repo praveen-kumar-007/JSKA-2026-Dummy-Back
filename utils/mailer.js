@@ -97,7 +97,7 @@ const sendWithFallback = async (mailOptions) => {
   if (!enabled) {
     const to = mailOptions?.to || 'unknown';
     console.log(`Skipping email to ${to} because email sending is disabled`);
-    return { skipped: true, to };
+    return { skipped: true, to, reason: 'disabled' };
   }
   const mail = {
     from: mailOptions.from || process.env.EMAIL_FROM || process.env.EMAIL_USER,

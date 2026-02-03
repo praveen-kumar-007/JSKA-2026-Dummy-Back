@@ -112,27 +112,39 @@ const updateStatus = async (req, res) => {
 
         let emailSent = false;
         let emailType = null;
+        let emailSkipped = false;
+        let emailSkipReason = null;
         if (updated.email && status !== previousStatus) {
             if (status === 'Approved') {
                 try {
-                    await sendApprovalEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
-                    emailSent = true;
-                    emailType = 'approval';
+                    const result = await sendApprovalEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
+                    if (result && result.skipped) {
+                        emailSkipped = true;
+                        emailSkipReason = result.reason || 'disabled';
+                    } else {
+                        emailSent = true;
+                        emailType = 'approval';
+                    }
                 } catch (err) {
                     console.error('Failed to send approval email:', err);
                 }
             } else if (status === 'Rejected') {
                 try {
-                    await sendRejectionEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
-                    emailSent = true;
-                    emailType = 'rejection';
+                    const result = await sendRejectionEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
+                    if (result && result.skipped) {
+                        emailSkipped = true;
+                        emailSkipReason = result.reason || 'disabled';
+                    } else {
+                        emailSent = true;
+                        emailType = 'rejection';
+                    }
                 } catch (err) {
                     console.error('Failed to send rejection email:', err);
                 }
             }
         }
 
-        res.status(200).json({ success: true, data: updated, emailSent, emailType });
+        res.status(200).json({ success: true, data: updated, emailSent, emailType, emailSkipped, emailSkipReason });
     } catch (error) {
         res.status(500).json({ success: false, message: "Update failed" });
     }

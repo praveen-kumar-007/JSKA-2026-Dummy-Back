@@ -146,8 +146,11 @@ exports.sendDonationReceipt = async (req, res) => {
     // Convert base64 string to buffer and attach
     const buffer = Buffer.from(pdfBase64, 'base64');
     try {
-      await sendDonationEmail({ to: donation.email, name: donation.name, amount: donation.amount, attachments: [{ filename: filename || `donation-${donation._id}.pdf`, content: buffer }] });
-      res.json({ success: true, message: 'Receipt emailed to donor.' });
+      const result = await sendDonationEmail({ to: donation.email, name: donation.name, amount: donation.amount, attachments: [{ filename: filename || `donation-${donation._id}.pdf`, content: buffer }] });
+      if (result && result.skipped) {
+        return res.json({ success: true, message: 'Email sending is disabled. Receipt was not sent.', emailSent: false, emailSkipped: true, emailSkipReason: result.reason || 'disabled' });
+      }
+      res.json({ success: true, message: 'Receipt emailed to donor.', emailSent: true });
     } catch (mailErr) {
       console.error('Failed to send receipt email:', mailErr);
       res.status(500).json({ success: false, message: 'Failed to send receipt email.' });
