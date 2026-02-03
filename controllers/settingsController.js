@@ -17,8 +17,9 @@ exports.getPublicSettings = async (req, res) => {
     const allowExportPlayers = settings ? (typeof settings.allowExportPlayers === 'boolean' ? settings.allowExportPlayers : true) : true;
     const allowExportTechnicalOfficials = settings ? (typeof settings.allowExportTechnicalOfficials === 'boolean' ? settings.allowExportTechnicalOfficials : true) : true;
     const allowExportInstitutions = settings ? (typeof settings.allowExportInstitutions === 'boolean' ? settings.allowExportInstitutions : true) : true;
+    const emailEnabled = settings ? (typeof settings.emailEnabled === 'boolean' ? settings.emailEnabled : true) : true;
 
-    res.status(200).json({ success: true, data: { showIdsToUsers, allowGallery, allowNews, allowContacts, allowDonations, allowImportantDocs, allowUnifiedSearch, allowExportAll, allowExportPlayers, allowExportTechnicalOfficials, allowExportInstitutions } });
+    res.status(200).json({ success: true, data: { showIdsToUsers, allowGallery, allowNews, allowContacts, allowDonations, allowImportantDocs, allowUnifiedSearch, allowExportAll, allowExportPlayers, allowExportTechnicalOfficials, allowExportInstitutions, emailEnabled } });
   } catch (err) {
     console.error('getPublicSettings error', err);
     res.status(500).json({ success: false, message: 'Failed to get settings' });
@@ -39,7 +40,7 @@ exports.getSettings = async (req, res) => {
 // Admin-only: update settings
 exports.updateSettings = async (req, res) => {
   try {
-    const { showIdsToUsers, allowGallery, allowNews, allowContacts, allowDonations, allowImportantDocs, allowUnifiedSearch, allowExportAll, allowExportPlayers, allowExportTechnicalOfficials, allowExportInstitutions } = req.body;
+    const { showIdsToUsers, allowGallery, allowNews, allowContacts, allowDonations, allowImportantDocs, allowUnifiedSearch, allowExportAll, allowExportPlayers, allowExportTechnicalOfficials, allowExportInstitutions, emailEnabled } = req.body;
     const update = {};
     if (typeof showIdsToUsers !== 'undefined') update.showIdsToUsers = showIdsToUsers;
     if (typeof allowGallery !== 'undefined') update.allowGallery = allowGallery;
@@ -52,6 +53,7 @@ exports.updateSettings = async (req, res) => {
     if (typeof allowExportPlayers !== 'undefined') update.allowExportPlayers = allowExportPlayers;
     if (typeof allowExportTechnicalOfficials !== 'undefined') update.allowExportTechnicalOfficials = allowExportTechnicalOfficials;
     if (typeof allowExportInstitutions !== 'undefined') update.allowExportInstitutions = allowExportInstitutions;
+    if (typeof emailEnabled !== 'undefined') update.emailEnabled = emailEnabled;
     const settings = await Setting.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
     res.status(200).json({ success: true, message: 'Settings updated', data: settings });
   } catch (err) {

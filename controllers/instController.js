@@ -1,6 +1,7 @@
 const Institution = require('../models/Institution');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
 
 // 1. Register a new institution with Cloudinary Screenshot
 const registerInstitution = async (req, res) => {
@@ -52,6 +53,16 @@ const registerInstitution = async (req, res) => {
         });
 
         await newInstitution.save();
+
+        // Send application received email (non-blocking)
+        if (newInstitution.email) {
+            try {
+                await sendApplicationReceivedEmail({ to: newInstitution.email, name: newInstitution.instName, entityType: 'institution' });
+            } catch (err) {
+                console.error('Failed to send application received email:', err);
+            }
+        }
+
         res.status(201).json({ success: true, message: "Application submitted successfully!" });
     } catch (error) {
         if (req.files) {
@@ -92,11 +103,36 @@ const getApprovedInstitutions = async (req, res) => {
 const updateStatus = async (req, res) => {
     try {
         const { id, status } = req.body; 
-        const inst = await Institution.findByIdAndUpdate(id, { status }, { new: true });
-        
+        const inst = await Institution.findById(id);
         if (!inst) return res.status(404).json({ success: false, message: "Record not found" });
-        
-        res.status(200).json({ success: true, data: inst });
+
+        const previousStatus = inst.status;
+        inst.status = status;
+        const updated = await inst.save();
+
+        let emailSent = false;
+        let emailType = null;
+        if (updated.email && status !== previousStatus) {
+            if (status === 'Approved') {
+                try {
+                    await sendApprovalEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
+                    emailSent = true;
+                    emailType = 'approval';
+                } catch (err) {
+                    console.error('Failed to send approval email:', err);
+                }
+            } else if (status === 'Rejected') {
+                try {
+                    await sendRejectionEmail({ to: updated.email, name: updated.instName, entityType: 'institution' });
+                    emailSent = true;
+                    emailType = 'rejection';
+                } catch (err) {
+                    console.error('Failed to send rejection email:', err);
+                }
+            }
+        }
+
+        res.status(200).json({ success: true, data: updated, emailSent, emailType });
     } catch (error) {
         res.status(500).json({ success: false, message: "Update failed" });
     }
@@ -106,10 +142,19 @@ const updateStatus = async (req, res) => {
 const deleteInstitution = async (req, res) => {
     try {
         const { id } = req.params;
+        const existing = await Institution.findById(id);
+        if (!existing) return res.status(404).json({ success: false, message: "Record not found" });
+
         const deleted = await Institution.findByIdAndDelete(id);
-        
-        if (!deleted) return res.status(404).json({ success: false, message: "Record not found" });
-        
+
+        if (deleted && deleted.email) {
+            try {
+                await sendDeletionEmail({ to: deleted.email, name: deleted.instName, entityType: 'institution' });
+            } catch (err) {
+                console.error('Failed to send deletion email:', err);
+            }
+        }
+
         res.status(200).json({ success: true, message: "Record deleted successfully" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Delete failed" });

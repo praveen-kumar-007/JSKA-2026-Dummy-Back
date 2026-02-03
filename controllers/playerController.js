@@ -2,6 +2,7 @@
 const Player = require('../models/Player');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
 
 // Get a single player by Mongo _id (for admin details view)
 exports.getPlayerById = async (req, res) => {
@@ -140,6 +141,16 @@ exports.registerPlayer = async (req, res) => {
         });
 
         await newPlayer.save();
+
+        // Send application received email (non-blocking)
+        if (newPlayer.email) {
+            try {
+                await sendApplicationReceivedEmail({ to: newPlayer.email, name: newPlayer.fullName, entityType: 'player' });
+            } catch (err) {
+                console.error('Failed to send application received email:', err);
+            }
+        }
+
         res.status(201).json({ 
             success: true, 
             message: "Registration successful! Awaiting manual verification." 
@@ -167,8 +178,6 @@ exports.getAllPlayers = async (req, res) => {
 };
 
 // 3. Update Status (Dashboard)
-const { sendApprovalEmail } = require('../utils/mailer');
-
 exports.updatePlayerStatus = async (req, res) => {
     try {
         const { id, status } = req.body;
@@ -180,18 +189,30 @@ exports.updatePlayerStatus = async (req, res) => {
         player.status = status;
         const updated = await player.save();
 
-        // Send approval email when status changes to Approved (only once)
+        // Send status emails (only when status changes)
         let emailSent = false;
-        if (status === 'Approved' && previousStatus !== 'Approved' && updated.email) {
-            try {
-                await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo });
-                emailSent = true;
-            } catch (err) {
-                console.error('Failed to send approval email:', err);
+        let emailType = null;
+        if (updated.email && status !== previousStatus) {
+            if (status === 'Approved') {
+                try {
+                    await sendApprovalEmail({ to: updated.email, name: updated.fullName, idNo: updated.idNo, entityType: 'player' });
+                    emailSent = true;
+                    emailType = 'approval';
+                } catch (err) {
+                    console.error('Failed to send approval email:', err);
+                }
+            } else if (status === 'Rejected') {
+                try {
+                    await sendRejectionEmail({ to: updated.email, name: updated.fullName, entityType: 'player' });
+                    emailSent = true;
+                    emailType = 'rejection';
+                } catch (err) {
+                    console.error('Failed to send rejection email:', err);
+                }
             }
         }
 
-        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent });
+        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent, emailType });
     } catch (error) {
         console.error('updatePlayerStatus error:', error);
         res.status(500).json({ success: false, message: "Update failed" });
@@ -271,10 +292,19 @@ exports.clearPlayerIdNo = async (req, res) => {
 // 4. Delete Player (Dashboard)
 exports.deletePlayer = async (req, res) => {
     try {
+        const existing = await Player.findById(req.params.id);
+        if (!existing) return res.status(404).json({ success: false, message: "Player not found" });
+
         const deleted = await Player.findByIdAndDelete(req.params.id);
-        
-        if (!deleted) return res.status(404).json({ success: false, message: "Player not found" });
-        
+
+        if (deleted && deleted.email) {
+            try {
+                await sendDeletionEmail({ to: deleted.email, name: deleted.fullName, entityType: 'player' });
+            } catch (err) {
+                console.error('Failed to send deletion email:', err);
+            }
+        }
+
         res.status(200).json({ success: true, message: "Record deleted successfully" });
     } catch (error) {
         res.status(500).json({ success: false, message: "Delete failed" });

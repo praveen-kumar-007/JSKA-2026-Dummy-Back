@@ -50,6 +50,12 @@ const SettingSchema = new mongoose.Schema({
     default: true,
   },
 
+  // Email sending toggle for nodemailer (admin controlled)
+  emailEnabled: {
+    type: Boolean,
+    default: true,
+  },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Setting', SettingSchema);
