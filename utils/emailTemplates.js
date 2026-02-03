@@ -22,10 +22,12 @@ const templates = {
       <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
 
       <p><strong>Login details for Player Portal:</strong><br/>
-      Login ID: <strong>${loginId || 'your registered email ID'}</strong><br/>
-      Password: <strong>${loginPassword || 'your registered mobile number'}</strong></p>
+      Login ID: <strong>${loginId || 'your registered email address'}</strong><br/>
+      Password: <strong>${loginPassword || 'your registered mobile number (used during registration)'}</strong></p>
 
-      <p>You will need to enter the above details exactly as registered to access your account and ID card.</p>
+      <p>Your Login ID is your registered email address and your password is your registered mobile number.</p>
+
+      <p>You will need to enter these details exactly as registered to access your account and ID card.</p>
 
       <p>We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.</p>
 
@@ -46,11 +48,13 @@ const templates = {
       'Please visit the DDKA official website to check your details and download your ID card.',
       `Login URL: ${LOGIN_URL}`,
       '',
-      `Login details for Player Portal:`,
-      `Login ID: ${loginId || 'your registered email ID'}`,
-      `Password: ${loginPassword || 'your registered mobile number'}`,
+      'Login details for Player Portal:',
+      `Login ID: ${loginId || 'your registered email address'}`,
+      `Password: ${loginPassword || 'your registered mobile number (used during registration)'}`,
       '',
-      'You will need to enter the above details exactly as registered to access your account and ID card.',
+      'Your Login ID is your registered email address and your password is your registered mobile number.',
+      '',
+      'You will need to enter these details exactly as registered to access your account and ID card.',
       '',
       'We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.',
       '',
@@ -72,8 +76,10 @@ const templates = {
       <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
 
       <p><strong>Login details for Institution Portal:</strong><br/>
-      Login ID: <strong>${loginId || 'your registered institution email ID'}</strong><br/>
+      Login ID: <strong>${loginId || 'your registered institution email address'}</strong><br/>
       Password: <strong>${loginPassword || 'your registered office / alternate phone number'}</strong></p>
+
+      <p>Your Login ID is the institution email address you registered with and your password is the registered office / alternate phone number.</p>
       <br />
       <p>With best wishes,<br />
       <strong>Dhanbad District Kabaddi Association</strong><br />
@@ -92,8 +98,10 @@ const templates = {
       `Login URL: ${LOGIN_URL}`,
       '',
       'Login details for Institution Portal:',
-      `Login ID: ${loginId || 'your registered institution email ID'}`,
+      `Login ID: ${loginId || 'your registered institution email address'}`,
       `Password: ${loginPassword || 'your registered office / alternate phone number'}`,
+      '',
+      'Your Login ID is the institution email address you registered with and your password is the registered office / alternate phone number.',
       '',
       'With best wishes,',
       'Dhanbad District Kabaddi Association',
@@ -110,10 +118,12 @@ const templates = {
       <p>Your details and documents have been verified and accepted as per our guidelines.</p>
 
       <p><strong>Login details for Technical Official Portal:</strong><br/>
-      Login ID: <strong>${loginId || 'your registered email ID'}</strong><br/>
-      Password: <strong>${loginPassword || 'your registered mobile number'}</strong></p>
+      Login ID: <strong>${loginId || 'your registered email address'}</strong><br/>
+      Password: <strong>${loginPassword || 'your registered mobile number (used during registration)'}</strong></p>
 
-      <p>You will need to enter the above details exactly as registered to access your account.</p>
+      <p>Your Login ID is your registered email address and your password is your registered mobile number.</p>
+
+      <p>You will need to enter these details exactly as registered to access your account.</p>
 
       <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
       <br />
@@ -130,11 +140,13 @@ const templates = {
       'Your details and documents have been verified and accepted as per our guidelines.',
       '',
       'Login details for Technical Official Portal:',
-      `Login ID: ${loginId || 'your registered email ID'}`,
-      `Password: ${loginPassword || 'your registered mobile number'}`,
+      `Login ID: ${loginId || 'your registered email address'}`,
+      `Password: ${loginPassword || 'your registered mobile number (used during registration)'}`,
       `Login URL: ${LOGIN_URL}`,
       '',
-      'You will need to enter the above details exactly as registered to access your account.',
+      'Your Login ID is your registered email address and your password is your registered mobile number.',
+      '',
+      'You will need to enter these details exactly as registered to access your account.',
       '',
       'With best wishes,',
       'Dhanbad District Kabaddi Association',
