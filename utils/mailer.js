@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
 const Setting = require('../models/Setting');
 
 // Email sending is controlled by the admin toggle (emailEnabled).
@@ -57,6 +58,9 @@ if (!process.env.BREVO_API_KEY && process.env.EMAIL_USER && process.env.EMAIL_PA
 
 const isEmailEnabled = async () => {
   try {
+    if (mongoose.connection?.readyState !== 1) {
+      return true;
+    }
     const settings = await Setting.findOne().sort({ createdAt: -1 }).lean();
     if (settings && typeof settings.emailEnabled === 'boolean') {
       return settings.emailEnabled;
