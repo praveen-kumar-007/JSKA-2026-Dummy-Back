@@ -2,6 +2,13 @@ const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const Setting = require('../models/Setting');
 
+const logoUrl = process.env.EMAIL_LOGO_URL;
+const logoHtml = logoUrl
+  ? `<div style="text-align:center; margin-bottom:16px;">
+      <img src="${logoUrl}" alt="DDKA" style="max-width:140px; height:auto;" />
+    </div>`
+  : '';
+
 // Email sending is controlled by the admin toggle (emailEnabled).
 // Prefer Brevo API when BREVO_API_KEY is set (works on Render free tier).
 // SMTP is used only if Brevo is not configured.
@@ -80,6 +87,7 @@ const sendWithFallback = async (mailOptions) => {
   }
   const mail = {
     from: mailOptions.from || process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    replyTo: mailOptions.replyTo || process.env.EMAIL_REPLY_TO || undefined,
     ...mailOptions
   };
 
@@ -91,6 +99,7 @@ const sendWithFallback = async (mailOptions) => {
           email: mail.from,
           name: process.env.EMAIL_FROM_NAME || 'DDKA'
         },
+        replyTo: mail.replyTo ? { email: mail.replyTo } : undefined,
         to: toList.map(email => ({ email })),
         subject: mail.subject,
         textContent: mail.text || undefined,
@@ -192,6 +201,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
         <p>With best wishes,<br />
         <strong>Dhanbad District Kabaddi Association</strong><br />
         Official Registration Team</p>
+        ${logoHtml}
       </div>
     `;
     const text = `Dear ${name || 'Applicant'},\n\nGreetings from Dhanbad District Kabaddi Association!\n\nWe are pleased to inform you that your institution registration has been approved.\n\nAll details and documents submitted by you have been verified and found correct.\n\nWith best wishes,\nDhanbad District Kabaddi Association\nOfficial Registration Team`;
@@ -219,6 +229,7 @@ const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {})
       <p>With best wishes,<br />
       <strong>Dhanbad District Kabaddi Association</strong><br />
       Official Registration Team</p>
+      ${logoHtml}
     </div>
   `;
 
@@ -247,6 +258,7 @@ const sendRejectionEmail = async ({ to, name, entityType = 'player' } = {}) => {
       <br />
       <p>Regards,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
+      ${logoHtml}
     </div>
   `;
   const text = `Dear ${name || 'Applicant'},\n\nThank you for your ${label} submission to the Dhanbad District Kabaddi Association.\n\nAfter review, we regret to inform you that your ${label} has been rejected.\nIf you believe this was a mistake, please contact us for clarification.\n\nRegards,\nDhanbad District Kabaddi Association`;
@@ -265,6 +277,7 @@ const sendDeletionEmail = async ({ to, name, entityType = 'player' } = {}) => {
       <br />
       <p>Regards,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
+      ${logoHtml}
     </div>
   `;
   const text = `Dear ${name || 'Applicant'},\n\nThis is to inform you that your ${label} record has been deleted from our system.\n\nIf you believe this was a mistake, please contact us and we will assist you.\n\nRegards,\nDhanbad District Kabaddi Association`;
@@ -283,6 +296,7 @@ const sendApplicationReceivedEmail = async ({ to, name, entityType = 'player' } 
       <br />
       <p>Thank you,<br />
       <strong>Dhanbad District Kabaddi Association</strong></p>
+      ${logoHtml}
     </div>
   `;
   const text = `Dear ${name || 'Applicant'},\n\nWe have received your ${label} application.\nYour data and records are under verification. After successful verification, you will receive further information from us.\n\nThank you,\nDhanbad District Kabaddi Association`;
@@ -297,6 +311,7 @@ const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
     <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association.</p>
     <p>We will process your contribution and send an official receipt shortly.</p>
     <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
+    ${logoHtml}
   </div>`;
   const text = `Dear ${name || 'Supporter'},\n\nThank you for your generous donation of ₹${amount} to Dhanbad District Kabaddi Association. We will process your contribution and send an official receipt shortly.\n\nWith gratitude,\nDDKA`;
 
