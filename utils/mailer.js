@@ -34,8 +34,10 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     }
   });
 
-  // Verify transporter at startup to provide clear diagnostics
-  transporter.verify((err) => {
+  // Verify transporter at startup to provide clear diagnostics (opt-in)
+  const verifyOnStartup = String(process.env.EMAIL_VERIFY_ON_STARTUP || 'false').toLowerCase() === 'true';
+  if (verifyOnStartup) {
+    transporter.verify((err) => {
     const userSet = !!process.env.EMAIL_USER;
     const passSet = !!process.env.EMAIL_PASS;
     const passLength = process.env.EMAIL_PASS ? String(process.env.EMAIL_PASS).length : 0;
@@ -46,7 +48,8 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     } else {
       console.log('SMTP transporter verified. Ready to send emails.');
     }
-  });
+    });
+  }
 } else {
   console.warn('SMTP credentials are missing (EMAIL_USER/EMAIL_PASS). Emails will be skipped until configured.');
 }
