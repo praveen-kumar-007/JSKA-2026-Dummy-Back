@@ -39,7 +39,7 @@ exports.getBulkRecipients = async (req, res) => {
       ...newsletters.map(n => ({
         id: n._id,
         type: 'Newsletter',
-        name: 'Newsletter Subscriber',
+        name: 'Subscriber',
         email: n.email,
         status: 'Subscribed'
       })),
