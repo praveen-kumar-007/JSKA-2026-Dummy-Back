@@ -57,6 +57,18 @@ exports.getPlayerByIdNo = async (req, res) => {
     }
 };
 
+// Helper: generate a unique player ID like DDKA-1234
+const generateUniquePlayerIdNo = async () => {
+    const prefix = 'DDKA-';
+    for (let attempt = 0; attempt < 10; attempt++) {
+        const random = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+        const idNo = `${prefix}${random}`;
+        const existing = await Player.findOne({ idNo }).select('_id').lean();
+        if (!existing) return idNo;
+    }
+    throw new Error('Unable to generate unique player ID number');
+};
+
 // 1. Register Player with 4 Mandatory Files
 exports.registerPlayer = async (req, res) => {
     try {
@@ -187,6 +199,16 @@ exports.updatePlayerStatus = async (req, res) => {
 
         const previousStatus = player.status;
         player.status = status;
+
+        // Automatically generate ID number when approving a player, if not already set
+        if (status === 'Approved' && !player.idNo) {
+            try {
+                player.idNo = await generateUniquePlayerIdNo();
+            } catch (genErr) {
+                console.error('Failed to generate player ID number:', genErr);
+            }
+        }
+
         const updated = await player.save();
 
         // Send status emails (only when status changes)

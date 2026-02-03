@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const Setting = require('../models/Setting');
+const { templates } = require('./emailTemplates');
 
 const logoUrl = process.env.EMAIL_LOGO_URL;
 const logoFooterHtml = logoUrl
@@ -198,121 +199,81 @@ const sendWithFallback = async (mailOptions) => {
   }
 };
 
-const buildEntityLabel = (entityType) => (entityType === 'institution' ? 'institution' : 'registration');
+const buildEntityLabel = (entityType) => {
+  if (entityType === 'institution') return 'institution registration';
+  if (entityType === 'official') return 'Technical Official registration';
+  return 'player registration';
+};
 
 const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
 
   if (entityType === 'institution') {
-    const subject = '🎉 Institution Approved – Dhanbad District Kabaddi Association';
-    const html = wrapHtml(`
-        <p>Dear ${name || 'Applicant'},</p>
-        <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
-        <p>We are pleased to inform you that your institution registration has been <strong>approved</strong>.</p>
-        <p>All details and documents submitted by you have been verified and found correct.</p>
-        <br />
-        <p>With best wishes,<br />
-        <strong>Dhanbad District Kabaddi Association</strong><br />
-        Official Registration Team</p>
-    `);
-    const text = `Dear ${name || 'Applicant'},\n\nGreetings from Dhanbad District Kabaddi Association!\n\nWe are pleased to inform you that your institution registration has been approved.\n\nAll details and documents submitted by you have been verified and found correct.\n\nWith best wishes,\nDhanbad District Kabaddi Association\nOfficial Registration Team`;
+    const tpl = templates.institutionApproval;
+    const ctx = { name: name || 'Applicant' };
+    const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+    const html = wrapHtml(tpl.html(ctx));
+    const text = tpl.text(ctx);
     return await sendWithFallback({ to, subject, text, html });
   }
 
-  const subject = '🎉 Registration Approved – Dhanbad District Kabaddi Association';
-  const html = wrapHtml(`
-      <p>Dear ${name || 'Player'},</p>
+  if (entityType === 'official') {
+    const tpl = templates.officialApproval;
+    const ctx = { name: name || 'Applicant' };
+    const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+    const html = wrapHtml(tpl.html(ctx));
+    const text = tpl.text(ctx);
+    return await sendWithFallback({ to, subject, text, html });
+  }
 
-      <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
-
-      <p>We are pleased to inform you that your registration has been <strong>successfully approved</strong> by the Dhanbad District Kabaddi Association.</p>
-
-      <p>All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.</p>
-
-      ${idNo ? `<p><strong>Your Player ID:</strong> ${idNo}</p>` : ''}
-
-      <p>Please visit the <strong>DDKA official website</strong> to check your details. You can log in using your <strong>Email ID</strong> and <strong>Password</strong> to access your ID card and other assets from DDKA.</p>
-
-      <p>We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.</p>
-
-      <br />
-      <p>With best wishes,<br />
-      <strong>Dhanbad District Kabaddi Association</strong><br />
-      Official Registration Team</p>
-  `);
-
-  const text = `Dear ${name || 'Player'},\n\n` +
-    `Greetings from Dhanbad District Kabaddi Association!\n\n` +
-    `We are pleased to inform you that your registration has been successfully approved by the Dhanbad District Kabaddi Association.\n\n` +
-    `All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.\n\n` +
-    (idNo ? `Your Player ID: ${idNo}\n\n` : '') +
-    `Please visit the DDKA official website to check your details. You can log in using your Email ID and Password to access your ID card and other assets from DDKA.\n\n` +
-    `We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.\n\n` +
-    `With best wishes,\nDhanbad District Kabaddi Association\nOfficial Registration Team`;
-
+  const tpl = templates.playerApproval;
+  const ctx = { name: name || 'Player' };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
   return await sendWithFallback({ to, subject, text, html });
 };
 
 const sendRejectionEmail = async ({ to, name, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
-  const subject = `Registration Update – DDKA`;
-  const html = wrapHtml(`
-      <p>Dear ${name || 'Applicant'},</p>
-      <p>Thank you for your ${label} submission to the Dhanbad District Kabaddi Association.</p>
-      <p>After review, we regret to inform you that your ${label} has been <strong>rejected</strong>.</p>
-      <p>If you believe this was a mistake, please contact us for clarification.</p>
-      <br />
-      <p>Regards,<br />
-      <strong>Dhanbad District Kabaddi Association</strong></p>
-  `);
-  const text = `Dear ${name || 'Applicant'},\n\nThank you for your ${label} submission to the Dhanbad District Kabaddi Association.\n\nAfter review, we regret to inform you that your ${label} has been rejected.\nIf you believe this was a mistake, please contact us for clarification.\n\nRegards,\nDhanbad District Kabaddi Association`;
+  const tpl = templates.genericRejection;
+  const ctx = { name: name || 'Applicant', label };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
   return await sendWithFallback({ to, subject, text, html });
 };
 
 const sendDeletionEmail = async ({ to, name, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
-  const subject = `Record Deleted – DDKA`;
-  const html = wrapHtml(`
-      <p>Dear ${name || 'Applicant'},</p>
-      <p>This is to inform you that your ${label} record has been <strong>deleted</strong> from our system.</p>
-      <p>If you believe this was a mistake, please contact us and we will assist you.</p>
-      <br />
-      <p>Regards,<br />
-      <strong>Dhanbad District Kabaddi Association</strong></p>
-  `);
-  const text = `Dear ${name || 'Applicant'},\n\nThis is to inform you that your ${label} record has been deleted from our system.\n\nIf you believe this was a mistake, please contact us and we will assist you.\n\nRegards,\nDhanbad District Kabaddi Association`;
+  const tpl = templates.genericDeletion;
+  const ctx = { name: name || 'Applicant', label };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
   return await sendWithFallback({ to, subject, text, html });
 };
 
 const sendApplicationReceivedEmail = async ({ to, name, entityType = 'player' } = {}) => {
   if (!to) throw new Error('Recipient email is required');
   const label = buildEntityLabel(entityType);
-  const subject = `Application Received – DDKA`;
-  const html = wrapHtml(`
-      <p>Dear ${name || 'Applicant'},</p>
-      <p>We have received your ${label} application.</p>
-      <p>Your data and records are <strong>under verification</strong>. After successful verification, you will receive further information from us.</p>
-      <br />
-      <p>Thank you,<br />
-      <strong>Dhanbad District Kabaddi Association</strong></p>
-  `);
-  const text = `Dear ${name || 'Applicant'},\n\nWe have received your ${label} application.\nYour data and records are under verification. After successful verification, you will receive further information from us.\n\nThank you,\nDhanbad District Kabaddi Association`;
+  const tpl = templates.applicationReceived;
+  const ctx = { name: name || 'Applicant', label };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
   return await sendWithFallback({ to, subject, text, html });
 };
 
 const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
   if (!to) throw new Error('Recipient email is required');
-  const subject = `Thank you for your donation to DDKA`;
-  const html = wrapHtml(`
-    <p>Dear ${name || 'Supporter'},</p>
-    <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association.</p>
-    <p>We will process your contribution and send an official receipt shortly.</p>
-    <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
-  `);
-  const text = `Dear ${name || 'Supporter'},\n\nThank you for your generous donation of ₹${amount} to Dhanbad District Kabaddi Association. We will process your contribution and send an official receipt shortly.\n\nWith gratitude,\nDDKA`;
-
+  const tpl = templates.donationThanks;
+  const ctx = { name: name || 'Supporter', amount };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
   return await sendWithFallback({ to, subject, text, html, attachments: attachments || [] });
 };
 

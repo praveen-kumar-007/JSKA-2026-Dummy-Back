@@ -1,6 +1,7 @@
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
 
 // Helper to safely delete temp files
 const safeUnlink = (file) => {
@@ -121,6 +122,19 @@ exports.registerTechnicalOfficial = async (req, res) => {
 
     await official.save();
 
+    // Send application received (pending) email
+    if (official.email) {
+      try {
+        await sendApplicationReceivedEmail({
+          to: official.email,
+          name: official.candidateName,
+          entityType: 'official',
+        });
+      } catch (err) {
+        console.error('Failed to send technical official application received email:', err);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Technical Official application submitted successfully.',
@@ -170,19 +184,87 @@ exports.updateTechnicalOfficialStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid status value' });
     }
 
+    const existing = await TechnicalOfficial.findById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Technical Official not found' });
+    }
+
+    const previousStatus = existing.status;
+
     const updateDoc = { status };
     if (remarks !== undefined) updateDoc.remarks = remarks;
-
     const updated = await TechnicalOfficial.findByIdAndUpdate(id, updateDoc, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
 
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Technical Official not found' });
     }
 
-    return res.status(200).json({ success: true, message: 'Status updated successfully', data: updated });
+    // Send status-based emails when status actually changes
+    let emailSent = false;
+    let emailType = null;
+    let emailSkipped = false;
+    let emailSkipReason = null;
+
+    if (updated.email && status !== previousStatus) {
+      try {
+        if (status === 'Approved') {
+          const result = await sendApprovalEmail({
+            to: updated.email,
+            name: updated.candidateName,
+            entityType: 'official',
+          });
+          if (result && result.skipped) {
+            emailSkipped = true;
+            emailSkipReason = result.reason || 'disabled';
+          } else {
+            emailSent = true;
+            emailType = 'approval';
+          }
+        } else if (status === 'Rejected') {
+          const result = await sendRejectionEmail({
+            to: updated.email,
+            name: updated.candidateName,
+            entityType: 'official',
+          });
+          if (result && result.skipped) {
+            emailSkipped = true;
+            emailSkipReason = result.reason || 'disabled';
+          } else {
+            emailSent = true;
+            emailType = 'rejection';
+          }
+        } else if (status === 'Pending') {
+          // Optional: notify when moved back to pending
+          const result = await sendApplicationReceivedEmail({
+            to: updated.email,
+            name: updated.candidateName,
+            entityType: 'official',
+          });
+          if (result && result.skipped) {
+            emailSkipped = true;
+            emailSkipReason = result.reason || 'disabled';
+          } else {
+            emailSent = true;
+            emailType = 'pending';
+          }
+        }
+      } catch (err) {
+        console.error('Failed to send technical official status email:', err);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Status updated successfully',
+      data: updated,
+      emailSent,
+      emailType,
+      emailSkipped,
+      emailSkipReason,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update status' });
   }
@@ -242,6 +324,19 @@ exports.deleteTechnicalOfficial = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Technical Official not found' });
     }
+
+    if (deleted.email) {
+      try {
+        await sendDeletionEmail({
+          to: deleted.email,
+          name: deleted.candidateName,
+          entityType: 'official',
+        });
+      } catch (err) {
+        console.error('Failed to send technical official deletion email:', err);
+      }
+    }
+
     return res.status(200).json({ success: true, message: 'Technical Official deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to delete official' });
