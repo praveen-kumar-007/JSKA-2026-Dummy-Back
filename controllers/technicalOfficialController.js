@@ -289,7 +289,8 @@ exports.updateTechnicalOfficial = async (req, res) => {
       'email',
       'email',
       'remarks',
-      'grade'
+      'grade',
+      'examScore'
     ];
 
     const updateDoc = {};
@@ -302,6 +303,31 @@ exports.updateTechnicalOfficial = async (req, res) => {
 
     if (updateDoc.dob) {
       updateDoc.dob = new Date(updateDoc.dob);
+    }
+
+    // If examScore is provided, normalize to a number and auto-calculate grade
+    if (updateDoc.examScore !== undefined) {
+      const rawScore = updateDoc.examScore;
+      const numericScore = Number(rawScore);
+
+      if (Number.isNaN(numericScore)) {
+        // Invalid score; remove from update and do not touch grade
+        delete updateDoc.examScore;
+      } else {
+        updateDoc.examScore = numericScore;
+
+        // Auto-assign grade based on score range
+        if (numericScore >= 71 && numericScore <= 100) {
+          updateDoc.grade = 'A';
+        } else if (numericScore >= 61 && numericScore <= 70) {
+          updateDoc.grade = 'B';
+        } else if (numericScore >= 50 && numericScore <= 60) {
+          updateDoc.grade = 'C';
+        } else {
+          // Outside defined bands: clear grade
+          updateDoc.grade = null;
+        }
+      }
     }
 
     const updated = await TechnicalOfficial.findByIdAndUpdate(req.params.id, updateDoc, {

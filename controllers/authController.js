@@ -78,6 +78,7 @@ const sanitizeUser = (doc, role) => {
       email: doc.email,
       signatureUrl: doc.signatureUrl,
       photoUrl: doc.photoUrl,
+      examScore: doc.examScore,
       grade: doc.grade,
       status: doc.status,
       remarks: doc.remarks,

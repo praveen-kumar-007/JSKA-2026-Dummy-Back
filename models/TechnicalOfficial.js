@@ -29,6 +29,11 @@ const technicalOfficialSchema = new mongoose.Schema({
 
   signatureUrl: { type: String, required: true },
   photoUrl: { type: String, required: true },
+  examScore: {
+    type: Number,
+    min: 0,
+    default: null
+  },
   grade: {
     type: String,
     enum: ['A', 'B', 'C'],
