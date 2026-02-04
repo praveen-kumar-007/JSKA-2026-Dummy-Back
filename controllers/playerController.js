@@ -253,7 +253,7 @@ exports.updatePlayerStatus = async (req, res) => {
             }
         }
 
-        res.status(200).json({ success: true, message: `Status updated to ${status}`, emailSent, emailType, emailSkipped, emailSkipReason });
+        res.status(200).json({ success: true, message: `Status updated to ${status}`, data: updated, emailSent, emailType, emailSkipped, emailSkipReason });
     } catch (error) {
         console.error('updatePlayerStatus error:', error);
         res.status(500).json({ success: false, message: "Update failed" });
