@@ -3,6 +3,35 @@ const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
 
+const safeUnlink = (file) => {
+    if (!file) return;
+    const path = file.path || (Array.isArray(file) && file[0] && file[0].path);
+    if (path && fs.existsSync(path)) {
+        fs.unlinkSync(path);
+    }
+};
+
+// Derive Cloudinary public_id from a secure_url and delete it
+const deleteCloudinaryByUrl = async (url) => {
+    if (!url) return;
+    try {
+        const parsed = new URL(url);
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        const uploadIndex = segments.findIndex((s) => s === 'upload');
+        if (uploadIndex === -1) return;
+        let pathParts = segments.slice(uploadIndex + 1);
+        if (pathParts.length && /^v[0-9]+$/.test(pathParts[0])) {
+            pathParts = pathParts.slice(1);
+        }
+        if (!pathParts.length) return;
+        const publicIdWithExt = pathParts.join('/');
+        const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+        await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+        console.error('Failed to delete Cloudinary asset for institution:', err);
+    }
+};
+
 // 1. Register a new institution with Cloudinary Screenshot
 const registerInstitution = async (req, res) => {
     try {
@@ -70,9 +99,7 @@ const registerInstitution = async (req, res) => {
             ['screenshot', 'instLogo'].forEach((field) => {
                 const f = files[field];
                 const file = Array.isArray(f) ? f[0] : f;
-                if (file && fs.existsSync(file.path)) {
-                    fs.unlinkSync(file.path);
-                }
+                safeUnlink(file);
             });
         }
         res.status(500).json({ success: false, message: "Server Error", error: error.message });
@@ -163,6 +190,18 @@ const deleteInstitution = async (req, res) => {
         const existing = await Institution.findById(id);
         if (!existing) return res.status(404).json({ success: false, message: "Record not found" });
 
+        // Delete associated Cloudinary assets if present
+        try {
+            const deletions = [];
+            if (existing.screenshotUrl) deletions.push(deleteCloudinaryByUrl(existing.screenshotUrl));
+            if (existing.instLogoUrl) deletions.push(deleteCloudinaryByUrl(existing.instLogoUrl));
+            if (deletions.length) {
+                await Promise.all(deletions);
+            }
+        } catch (err) {
+            console.error('Failed to delete one or more institution assets from Cloudinary:', err);
+        }
+
         const deleted = await Institution.findByIdAndDelete(id);
 
         if (deleted && deleted.email) {
@@ -218,4 +257,103 @@ const getInstitutionPublicById = async (req, res) => {
     }
 };
 
-module.exports = { registerInstitution, getAllInstitutions, getApprovedInstitutions, updateStatus, deleteInstitution, getInstitutionById, getInstitutionPublicById };
+// 7. Admin: edit core details and optionally replace logo / screenshot
+const updateInstitution = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const inst = await Institution.findById(id);
+        if (!inst) {
+            if (req.files) {
+                const files = req.files;
+                ['screenshot', 'instLogo'].forEach((field) => {
+                    const f = files[field];
+                    const file = Array.isArray(f) ? f[0] : f;
+                    safeUnlink(file);
+                });
+            }
+            return res.status(404).json({ success: false, message: 'Institution not found' });
+        }
+
+        const allowedFields = [
+            'instType',
+            'instName',
+            'regNo',
+            'year',
+            'headName',
+            'secretaryName',
+            'totalPlayers',
+            'area',
+            'surfaceType',
+            'officePhone',
+            'altPhone',
+            'email',
+            'address',
+            'description',
+        ];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                inst[field] = req.body[field];
+            }
+        });
+
+        if (req.body.year) {
+            const yearNum = Number(req.body.year);
+            if (!Number.isNaN(yearNum)) {
+                inst.year = yearNum;
+            }
+        }
+        if (req.body.totalPlayers) {
+            const totalPlayersNum = Number(req.body.totalPlayers);
+            if (!Number.isNaN(totalPlayersNum)) {
+                inst.totalPlayers = totalPlayersNum;
+            }
+        }
+
+        const files = req.files || {};
+        const screenshotFile = Array.isArray(files.screenshot) ? files.screenshot[0] : files.screenshot;
+        const logoFile = Array.isArray(files.instLogo) ? files.instLogo[0] : files.instLogo;
+
+        const uploadPromises = [];
+        if (screenshotFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(inst.screenshotUrl);
+                    const up = await cloudinary.uploader.upload(screenshotFile.path, { folder: 'ddka_payments' });
+                    inst.screenshotUrl = up.secure_url;
+                    safeUnlink(screenshotFile);
+                })()
+            );
+        }
+        if (logoFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(inst.instLogoUrl);
+                    const up = await cloudinary.uploader.upload(logoFile.path, { folder: 'ddka_institution_logos' });
+                    inst.instLogoUrl = up.secure_url;
+                    safeUnlink(logoFile);
+                })()
+            );
+        }
+
+        if (uploadPromises.length > 0) {
+            await Promise.all(uploadPromises);
+        }
+
+        const updated = await inst.save();
+        return res.status(200).json({ success: true, message: 'Institution updated successfully', data: updated });
+    } catch (error) {
+        console.error('updateInstitution error:', error);
+        if (req.files) {
+            const files = req.files;
+            ['screenshot', 'instLogo'].forEach((field) => {
+                const f = files[field];
+                const file = Array.isArray(f) ? f[0] : f;
+                safeUnlink(file);
+            });
+        }
+        return res.status(500).json({ success: false, message: 'Failed to update institution' });
+    }
+};
+
+module.exports = { registerInstitution, getAllInstitutions, getApprovedInstitutions, updateStatus, deleteInstitution, getInstitutionById, getInstitutionPublicById, updateInstitution };

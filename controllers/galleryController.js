@@ -30,11 +30,21 @@ exports.getAllImages = async (req, res) => {
   }
 };
 
-// Delete image (DB only, Cloudinary handled manually)
+// Delete image from DB and Cloudinary
 exports.deleteImage = async (req, res) => {
   try {
-    const img = await Gallery.findByIdAndDelete(req.params.id);
+    const img = await Gallery.findById(req.params.id);
     if (!img) return res.status(404).json({ success: false, message: 'Image not found' });
+
+    try {
+      if (img.public_id) {
+        await cloudinary.uploader.destroy(img.public_id);
+      }
+    } catch (err) {
+      console.error('Failed to delete gallery image from Cloudinary:', err);
+    }
+
+    await Gallery.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ success: true, message: 'Image deleted from gallery' });
   } catch (error) {

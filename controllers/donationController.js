@@ -4,6 +4,27 @@ const path = require('path');
 const fs = require('fs');
 const { sendDonationEmail } = require('../utils/mailer');
 
+// Derive Cloudinary public_id from a secure_url and delete it
+const deleteCloudinaryByUrl = async (url) => {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = segments.findIndex((s) => s === 'upload');
+    if (uploadIndex === -1) return;
+    let pathParts = segments.slice(uploadIndex + 1);
+    if (pathParts.length && /^v[0-9]+$/.test(pathParts[0])) {
+      pathParts = pathParts.slice(1);
+    }
+    if (!pathParts.length) return;
+    const publicIdWithExt = pathParts.join('/');
+    const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error('Failed to delete Cloudinary asset for donation:', err);
+  }
+};
+
 // Create a donation entry (supports optional receipt file upload)
 exports.createDonation = async (req, res) => {
   try {
@@ -97,10 +118,19 @@ exports.updateDonationDetails = async (req, res) => {
     const donation = await Donation.findById(id);
     if (!donation) return res.status(404).json({ success: false, message: 'Donation not found.' });
 
-    // Handle optional receipt file upload
+    // Handle optional receipt file upload (replace existing Cloudinary file if any)
     if (req.file) {
       try {
         const filePath = req.file.path;
+
+        if (donation.receiptUrl) {
+          try {
+            await deleteCloudinaryByUrl(donation.receiptUrl);
+          } catch (delErr) {
+            console.error('Failed to delete existing donation receipt from Cloudinary:', delErr);
+          }
+        }
+
         const upload = await cloudinary.uploader.upload(filePath, { folder: 'ddka/donations' });
         donation.receiptUrl = upload.secure_url;
         try { fs.unlinkSync(filePath); } catch (err) { /* ignore */ }
@@ -175,5 +205,30 @@ exports.getDonationById = async (req, res) => {
   } catch (err) {
     console.error('getDonationById error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch donation.' });
+  }
+};
+
+// Admin: delete donation and associated Cloudinary receipt (if any)
+exports.deleteDonation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, message: 'Donation ID is required.' });
+
+    const existing = await Donation.findById(id);
+    if (!existing) return res.status(404).json({ success: false, message: 'Donation not found.' });
+
+    if (existing.receiptUrl) {
+      try {
+        await deleteCloudinaryByUrl(existing.receiptUrl);
+      } catch (err) {
+        console.error('Failed to delete donation receipt from Cloudinary on delete:', err);
+      }
+    }
+
+    await Donation.findByIdAndDelete(id);
+    return res.json({ success: true, message: 'Donation deleted.' });
+  } catch (err) {
+    console.error('deleteDonation error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to delete donation.' });
   }
 };

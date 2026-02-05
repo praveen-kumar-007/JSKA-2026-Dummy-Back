@@ -9,7 +9,8 @@ const {
     updateStatus, 
     deleteInstitution, 
     getInstitutionById,
-    getInstitutionPublicById
+    getInstitutionPublicById,
+    updateInstitution
 } = require('../controllers/instController');
 
 // Multer setup for temporary file storage
@@ -36,5 +37,18 @@ router.get('/:id', protect, admin, requirePermission('canAccessInstitutionDetail
 router.get('/', protect, admin, requirePermission('canAccessInstitutionDetails'), getAllInstitutions);         // GET /api/institutions
 router.put('/status', protect, admin, requirePermission('canAccessInstitutionDetails'), updateStatus);         // PUT /api/institutions/status
 router.delete('/:id', protect, requirePermission('canDelete'), deleteInstitution);    // DELETE /api/institutions/:id
+
+// Admin: edit institution core details and optionally replace logo / payment screenshot
+router.put(
+    '/:id',
+    protect,
+    admin,
+    requirePermission('canAccessInstitutionDetails'),
+    upload.fields([
+        { name: 'screenshot', maxCount: 1 },
+        { name: 'instLogo', maxCount: 1 },
+    ]),
+    updateInstitution
+);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/multer');
-const { createDonation, getDonations, updateDonationStatus, updateDonationDetails, sendDonationReceipt, getDonationById } = require('../controllers/donationController');
+const { createDonation, getDonations, updateDonationStatus, updateDonationDetails, sendDonationReceipt, getDonationById, deleteDonation } = require('../controllers/donationController');
 const { protect, requirePermission } = require('../middleware/authMiddleware');
 
 // Public: create donation (accepts optional receipt image)
@@ -23,16 +23,6 @@ router.post('/:id/send-receipt', protect, requirePermission('canAccessDonations'
 router.get('/:id', getDonationById);
 
 // Admin: delete donation (requires delete permission)
-router.delete('/:id', protect, requirePermission('canDelete'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await require('../models/Donation').findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ success: false, message: 'Donation not found.' });
-    res.json({ success: true, message: 'Donation deleted.' });
-  } catch (err) {
-    console.error('Failed to delete donation', err);
-    res.status(500).json({ success: false, message: 'Failed to delete donation.' });
-  }
-});
+router.delete('/:id', protect, requirePermission('canDelete'), deleteDonation);
 
 module.exports = router;

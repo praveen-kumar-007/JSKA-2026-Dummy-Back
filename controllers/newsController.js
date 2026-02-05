@@ -2,6 +2,27 @@ const News = require('../models/News');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 
+// Derive Cloudinary public_id from a secure_url and delete it
+const deleteCloudinaryByUrl = async (url) => {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = segments.findIndex((s) => s === 'upload');
+    if (uploadIndex === -1) return;
+    let pathParts = segments.slice(uploadIndex + 1);
+    if (pathParts.length && /^v[0-9]+$/.test(pathParts[0])) {
+      pathParts = pathParts.slice(1);
+    }
+    if (!pathParts.length) return;
+    const publicIdWithExt = pathParts.join('/');
+    const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error('Failed to delete Cloudinary asset for news:', err);
+  }
+};
+
 // Update news status (publish/draft)
 exports.updateNewsStatus = async (req, res) => {
   try {
@@ -143,8 +164,18 @@ exports.shareNewsById = async (req, res) => {
 // Delete news
 exports.deleteNews = async (req, res) => {
   try {
-    const news = await News.findByIdAndDelete(req.params.id);
+    const news = await News.findById(req.params.id);
     if (!news) return res.status(404).json({ success: false, message: 'News not found' });
+
+    if (Array.isArray(news.images) && news.images.length > 0) {
+      try {
+        await Promise.all(news.images.map((url) => deleteCloudinaryByUrl(url)));
+      } catch (err) {
+        console.error('Failed to delete one or more news images from Cloudinary:', err);
+      }
+    }
+
+    await News.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'News deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error deleting news' });

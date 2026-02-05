@@ -16,6 +16,7 @@ const {
     assignPlayerIdNo,
     getPlayerById,
     clearPlayerIdNo,
+    updatePlayer,
 } = require('../controllers/playerController');
 
 /**
@@ -42,6 +43,25 @@ router.get('/card/:idNo', getPlayerByIdNo);
  * @desc    Fetch a single player record by Mongo _id for Admin Details
  */
 router.get('/:id', getPlayerById);
+
+/**
+ * @route   PUT /api/players/:id
+ * @desc    Admin: edit player core details and optionally replace documents
+ *          Accepts multipart/form-data with optional files: photo, front, back, receipt
+ */
+router.put(
+    '/:id',
+    protect,
+    admin,
+    requirePermission('canAccessPlayerDetails'),
+    upload.fields([
+        { name: 'photo', maxCount: 1 },
+        { name: 'front', maxCount: 1 },
+        { name: 'back', maxCount: 1 },
+        { name: 'receipt', maxCount: 1 },
+    ]),
+    updatePlayer
+);
 
 /**
  * @route   GET /api/players

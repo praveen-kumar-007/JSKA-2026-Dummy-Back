@@ -4,6 +4,35 @@ const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
 
+const safeUnlink = (file) => {
+    if (!file) return;
+    const path = file.path || (Array.isArray(file) && file[0] && file[0].path);
+    if (path && fs.existsSync(path)) {
+        fs.unlinkSync(path);
+    }
+};
+
+// Derive Cloudinary public_id from a secure_url and delete it
+const deleteCloudinaryByUrl = async (url) => {
+    if (!url) return;
+    try {
+        const parsed = new URL(url);
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        const uploadIndex = segments.findIndex((s) => s === 'upload');
+        if (uploadIndex === -1) return;
+        let pathParts = segments.slice(uploadIndex + 1); // e.g. ['v123', 'ddka', 'players', 'profiles', 'file.jpg']
+        if (pathParts.length && /^v[0-9]+$/.test(pathParts[0])) {
+            pathParts = pathParts.slice(1);
+        }
+        if (!pathParts.length) return;
+        const publicIdWithExt = pathParts.join('/');
+        const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+        await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+        console.error('Failed to delete Cloudinary asset for player:', err);
+    }
+};
+
 // Get a single player by Mongo _id (for admin details view)
 exports.getPlayerById = async (req, res) => {
     try {
@@ -260,6 +289,118 @@ exports.updatePlayerStatus = async (req, res) => {
     }
 };
 
+// 4. Admin: edit core details and optionally replace Cloudinary documents
+exports.updatePlayer = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const player = await Player.findById(id);
+        if (!player) {
+            // cleanup any uploaded temp files if player not found
+            if (req.files) {
+                Object.values(req.files).forEach((f) => safeUnlink(f));
+            }
+            return res.status(404).json({ success: false, message: 'Player not found' });
+        }
+
+        // Only allow specific fields to be edited from admin UI
+        const allowedFields = [
+            'fullName',
+            'fathersName',
+            'gender',
+            'dob',
+            'bloodGroup',
+            'email',
+            'phone',
+            'parentsPhone',
+            'address',
+            'aadharNumber',
+            'sportsExperience',
+            'reasonForJoining',
+            'memberRole',
+        ];
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                player[field] = req.body[field];
+            }
+        });
+
+        if (req.body.dob) {
+            player.dob = new Date(req.body.dob);
+        }
+
+        // Handle optional new files for Cloudinary
+        const files = req.files || {};
+        const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
+        const frontFile = Array.isArray(files.front) ? files.front[0] : files.front;
+        const backFile = Array.isArray(files.back) ? files.back[0] : files.back;
+        const receiptFile = Array.isArray(files.receipt) ? files.receipt[0] : files.receipt;
+
+        const uploadPromises = [];
+        if (photoFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(player.photoUrl);
+                    const resUpload = await cloudinary.uploader.upload(photoFile.path, { folder: 'ddka/players/profiles' });
+                    player.photoUrl = resUpload.secure_url;
+                    safeUnlink(photoFile);
+                })()
+            );
+        }
+        if (frontFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(player.aadharFrontUrl);
+                    const resUpload = await cloudinary.uploader.upload(frontFile.path, { folder: 'ddka/players/aadhar' });
+                    player.aadharFrontUrl = resUpload.secure_url;
+                    safeUnlink(frontFile);
+                })()
+            );
+        }
+        if (backFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(player.aadharBackUrl);
+                    const resUpload = await cloudinary.uploader.upload(backFile.path, { folder: 'ddka/players/aadhar' });
+                    player.aadharBackUrl = resUpload.secure_url;
+                    safeUnlink(backFile);
+                })()
+            );
+        }
+        if (receiptFile) {
+            uploadPromises.push(
+                (async () => {
+                    await deleteCloudinaryByUrl(player.receiptUrl);
+                    const resUpload = await cloudinary.uploader.upload(receiptFile.path, { folder: 'ddka/players/payments' });
+                    player.receiptUrl = resUpload.secure_url;
+                    safeUnlink(receiptFile);
+                })()
+            );
+        }
+
+        if (uploadPromises.length > 0) {
+            await Promise.all(uploadPromises);
+        }
+
+        const updated = await player.save();
+        const mappedPlayer = {
+            ...updated.toObject(),
+            photo: updated.photoUrl,
+            front: updated.aadharFrontUrl,
+            back: updated.aadharBackUrl,
+            receipt: updated.receiptUrl,
+        };
+
+        return res.status(200).json({ success: true, message: 'Player updated successfully', data: mappedPlayer });
+    } catch (error) {
+        console.error('updatePlayer error:', error);
+        if (req.files) {
+            Object.values(req.files).forEach((f) => safeUnlink(f));
+        }
+        return res.status(500).json({ success: false, message: 'Failed to update player' });
+    }
+};
+
 // 3b. Assign / save ID card number (idNo) for a player
 exports.assignPlayerIdNo = async (req, res) => {
     try {
@@ -335,6 +476,20 @@ exports.deletePlayer = async (req, res) => {
     try {
         const existing = await Player.findById(req.params.id);
         if (!existing) return res.status(404).json({ success: false, message: "Player not found" });
+
+        // Delete associated Cloudinary documents if present
+        try {
+            const deletions = [];
+            if (existing.photoUrl) deletions.push(deleteCloudinaryByUrl(existing.photoUrl));
+            if (existing.aadharFrontUrl) deletions.push(deleteCloudinaryByUrl(existing.aadharFrontUrl));
+            if (existing.aadharBackUrl) deletions.push(deleteCloudinaryByUrl(existing.aadharBackUrl));
+            if (existing.receiptUrl) deletions.push(deleteCloudinaryByUrl(existing.receiptUrl));
+            if (deletions.length) {
+                await Promise.all(deletions);
+            }
+        } catch (err) {
+            console.error('Failed to delete one or more player assets from Cloudinary:', err);
+        }
 
         const deleted = await Player.findByIdAndDelete(req.params.id);
 

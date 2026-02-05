@@ -30,7 +30,18 @@ router.post(
 router.get('/', protect, admin, requirePermission('canAccessTechnicalOfficials'), getAllTechnicalOfficials);
 router.get('/:id', protect, admin, requirePermission('canAccessTechnicalOfficials'), getTechnicalOfficialById);
 router.put('/status', protect, admin, requirePermission('canAccessTechnicalOfficials'), updateTechnicalOfficialStatus);
-router.put('/:id', protect, admin, requirePermission('canAccessTechnicalOfficials'), updateTechnicalOfficial);
+router.put(
+  '/:id',
+  protect,
+  admin,
+  requirePermission('canAccessTechnicalOfficials'),
+  upload.fields([
+    { name: 'signature', maxCount: 1 },
+    { name: 'photo', maxCount: 1 },
+    { name: 'receipt', maxCount: 1 },
+  ]),
+  updateTechnicalOfficial
+);
 router.delete('/:id', protect, requirePermission('canDelete'), deleteTechnicalOfficial);
 
 module.exports = router;

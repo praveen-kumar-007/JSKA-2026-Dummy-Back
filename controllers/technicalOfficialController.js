@@ -12,6 +12,27 @@ const safeUnlink = (file) => {
   }
 };
 
+// Derive Cloudinary public_id from a secure_url and delete it
+const deleteCloudinaryByUrl = async (url) => {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    const uploadIndex = segments.findIndex((s) => s === 'upload');
+    if (uploadIndex === -1) return;
+    let pathParts = segments.slice(uploadIndex + 1);
+    if (pathParts.length && /^v[0-9]+$/.test(pathParts[0])) {
+      pathParts = pathParts.slice(1);
+    }
+    if (!pathParts.length) return;
+    const publicIdWithExt = pathParts.join('/');
+    const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    console.error('Failed to delete Cloudinary asset for technical official:', err);
+  }
+};
+
 // Public: register a technical official
 exports.registerTechnicalOfficial = async (req, res) => {
   try {
@@ -272,7 +293,7 @@ exports.updateTechnicalOfficialStatus = async (req, res) => {
   }
 };
 
-// Admin: edit core details (without changing files)
+// Admin: edit core details and optionally replace uploaded files
 exports.updateTechnicalOfficial = async (req, res) => {
   try {
     const allowedFields = [
@@ -330,6 +351,70 @@ exports.updateTechnicalOfficial = async (req, res) => {
       }
     }
 
+    // Handle optional new files
+    const files = req.files || {};
+    const signatureFile = Array.isArray(files.signature) ? files.signature[0] : files.signature;
+    const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
+    const receiptFile = Array.isArray(files.receipt) ? files.receipt[0] : files.receipt;
+
+    const uploadPromises = [];
+    if (signatureFile) {
+      uploadPromises.push(
+        (async () => {
+          // delete previous signature
+          if (req.params.id) {
+            const existing = await TechnicalOfficial.findById(req.params.id).select('signatureUrl');
+            if (existing && existing.signatureUrl) {
+              await deleteCloudinaryByUrl(existing.signatureUrl);
+            }
+          }
+          const up = await cloudinary.uploader.upload(signatureFile.path, {
+            folder: 'ddka/technical-officials/signatures'
+          });
+          updateDoc.signatureUrl = up.secure_url;
+          safeUnlink(signatureFile);
+        })()
+      );
+    }
+    if (photoFile) {
+      uploadPromises.push(
+        (async () => {
+          if (req.params.id) {
+            const existing = await TechnicalOfficial.findById(req.params.id).select('photoUrl');
+            if (existing && existing.photoUrl) {
+              await deleteCloudinaryByUrl(existing.photoUrl);
+            }
+          }
+          const up = await cloudinary.uploader.upload(photoFile.path, {
+            folder: 'ddka/technical-officials/photos'
+          });
+          updateDoc.photoUrl = up.secure_url;
+          safeUnlink(photoFile);
+        })()
+      );
+    }
+    if (receiptFile) {
+      uploadPromises.push(
+        (async () => {
+          if (req.params.id) {
+            const existing = await TechnicalOfficial.findById(req.params.id).select('receiptUrl');
+            if (existing && existing.receiptUrl) {
+              await deleteCloudinaryByUrl(existing.receiptUrl);
+            }
+          }
+          const up = await cloudinary.uploader.upload(receiptFile.path, {
+            folder: 'ddka/technical-officials/payments'
+          });
+          updateDoc.receiptUrl = up.secure_url;
+          safeUnlink(receiptFile);
+        })()
+      );
+    }
+
+    if (uploadPromises.length > 0) {
+      await Promise.all(uploadPromises);
+    }
+
     const updated = await TechnicalOfficial.findByIdAndUpdate(req.params.id, updateDoc, {
       new: true,
       runValidators: true
@@ -341,6 +426,14 @@ exports.updateTechnicalOfficial = async (req, res) => {
 
     return res.status(200).json({ success: true, message: 'Technical Official updated successfully', data: updated });
   } catch (error) {
+    if (req.files) {
+      const files = req.files;
+      ['signature', 'photo', 'receipt'].forEach((field) => {
+        const f = files[field];
+        const file = Array.isArray(f) ? f[0] : f;
+        safeUnlink(file);
+      });
+    }
     return res.status(500).json({ success: false, message: 'Failed to update official' });
   }
 };
@@ -348,10 +441,25 @@ exports.updateTechnicalOfficial = async (req, res) => {
 // Admin: delete official
 exports.deleteTechnicalOfficial = async (req, res) => {
   try {
-    const deleted = await TechnicalOfficial.findByIdAndDelete(req.params.id);
-    if (!deleted) {
+    const existing = await TechnicalOfficial.findById(req.params.id);
+    if (!existing) {
       return res.status(404).json({ success: false, message: 'Technical Official not found' });
     }
+
+    // Delete associated Cloudinary assets if present
+    try {
+      const deletions = [];
+      if (existing.signatureUrl) deletions.push(deleteCloudinaryByUrl(existing.signatureUrl));
+      if (existing.photoUrl) deletions.push(deleteCloudinaryByUrl(existing.photoUrl));
+      if (existing.receiptUrl) deletions.push(deleteCloudinaryByUrl(existing.receiptUrl));
+      if (deletions.length) {
+        await Promise.all(deletions);
+      }
+    } catch (err) {
+      console.error('Failed to delete one or more technical official assets from Cloudinary:', err);
+    }
+
+    const deleted = await TechnicalOfficial.findByIdAndDelete(req.params.id);
 
     if (deleted.email) {
       try {
