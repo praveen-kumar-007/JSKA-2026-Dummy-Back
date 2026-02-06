@@ -4,6 +4,8 @@ const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail, sendRegistrationNotification } = require('../utils/mailer');
 const { getLoginActivities } = require('../utils/loginActivity');
 
+const shouldExposeLoginHistory = (req) => Boolean(req && req.admin && req.admin.role === 'superadmin');
+
 // Helper to safely delete temp files
 const safeUnlink = (file) => {
   if (!file) return;
@@ -214,9 +216,10 @@ exports.getTechnicalOfficialById = async (req, res) => {
     if (!official) {
       return res.status(404).json({ success: false, message: 'Technical Official not found' });
     }
-    const loginActivities = await getLoginActivities(official._id, 'official');
     const payload = official.toObject();
-    payload.loginActivities = loginActivities;
+    if (shouldExposeLoginHistory(req)) {
+      payload.loginActivities = await getLoginActivities(official._id, 'official');
+    }
     return res.status(200).json({ success: true, data: payload });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Error fetching official' });

@@ -4,6 +4,8 @@ const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail, sendRegistrationNotification } = require('../utils/mailer');
 const { getLoginActivities } = require('../utils/loginActivity');
 
+const shouldExposeLoginHistory = (req) => Boolean(req && req.admin && req.admin.role === 'superadmin');
+
 const safeUnlink = (file) => {
     if (!file) return;
     const path = file.path || (Array.isArray(file) && file[0] && file[0].path);
@@ -248,9 +250,10 @@ const getInstitutionById = async (req, res) => {
     try {
         const inst = await Institution.findById(req.params.id);
         if (!inst) return res.status(404).json({ success: false, message: 'Institution not found' });
-        const loginActivities = await getLoginActivities(inst._id, 'institution');
         const payload = inst.toObject();
-        payload.loginActivities = loginActivities;
+        if (shouldExposeLoginHistory(req)) {
+            payload.loginActivities = await getLoginActivities(inst._id, 'institution');
+        }
         res.status(200).json({ success: true, data: payload });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching institution' });

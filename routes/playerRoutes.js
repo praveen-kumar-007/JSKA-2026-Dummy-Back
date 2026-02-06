@@ -42,7 +42,7 @@ router.get('/card/:idNo', getPlayerByIdNo);
  * @route   GET /api/players/:id
  * @desc    Fetch a single player record by Mongo _id for Admin Details
  */
-router.get('/:id', getPlayerById);
+router.get('/:id', protect, admin, requirePermission('canAccessPlayerDetails'), getPlayerById);
 
 /**
  * @route   GET /api/players

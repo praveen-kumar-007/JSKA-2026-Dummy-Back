@@ -195,7 +195,7 @@ const signup = async (req, res) => {
 // Admin Login
 const login = async (req, res) => {
   try {
-    const { adminId, password } = req.body; // adminId can be ID or email
+    const { adminId, password, coordinates } = req.body; // adminId can be ID or email
 
     // Validation
     if (!adminId || !password) {
@@ -226,6 +226,7 @@ const login = async (req, res) => {
         role: 'admin',
         email: admin.email,
         loginType: admin.role,
+        coordinates,
       });
     }
     res.status(200).json({
