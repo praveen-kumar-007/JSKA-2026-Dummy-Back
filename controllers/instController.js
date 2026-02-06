@@ -1,7 +1,7 @@
 const Institution = require('../models/Institution');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail, sendRegistrationNotification } = require('../utils/mailer');
 const { getLoginActivities } = require('../utils/loginActivity');
 
 const safeUnlink = (file) => {
@@ -84,13 +84,37 @@ const registerInstitution = async (req, res) => {
 
         await newInstitution.save();
 
-        // Send application received email (non-blocking)
         if (newInstitution.email) {
             try {
                 await sendApplicationReceivedEmail({ to: newInstitution.email, name: newInstitution.instName, entityType: 'institution' });
             } catch (err) {
                 console.error('Failed to send application received email:', err);
             }
+        }
+
+        try {
+            await sendRegistrationNotification({
+                entityType: 'institution',
+                name: newInstitution.instName,
+                details: {
+                    'Institution Name': newInstitution.instName,
+                    'Reg. No.': newInstitution.regNo,
+                    Email: newInstitution.email,
+                    'Office Phone': newInstitution.officePhone,
+                    'Alt Phone': newInstitution.altPhone,
+                    Year: newInstitution.year,
+                    'Transaction ID': newInstitution.transactionId,
+                    'Total Players': newInstitution.totalPlayers,
+                    Area: newInstitution.area,
+                    'Surface': newInstitution.surfaceType
+                },
+                documents: [
+                    { label: 'Logo', url: newInstitution.instLogoUrl },
+                    { label: 'Payment screenshot', url: newInstitution.screenshotUrl }
+                ]
+            });
+        } catch (err) {
+            console.error('Failed to notify DDKA of institution registration:', err);
         }
 
         res.status(201).json({ success: true, message: "Application submitted successfully!" });

@@ -2,7 +2,7 @@
 const Player = require('../models/Player');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail, sendRegistrationNotification } = require('../utils/mailer');
 const { getLoginActivities } = require('../utils/loginActivity');
 
 const safeUnlink = (file) => {
@@ -186,13 +186,36 @@ exports.registerPlayer = async (req, res) => {
 
         await newPlayer.save();
 
-        // Send application received email (non-blocking)
         if (newPlayer.email) {
             try {
                 await sendApplicationReceivedEmail({ to: newPlayer.email, name: newPlayer.fullName, entityType: 'player' });
             } catch (err) {
                 console.error('Failed to send application received email:', err);
             }
+        }
+
+        try {
+            await sendRegistrationNotification({
+                entityType: 'player',
+                name: newPlayer.fullName,
+                details: {
+                    Email: newPlayer.email,
+                    Phone: newPlayer.phone,
+                    Parents: newPlayer.parentsPhone,
+                    Aadhar: newPlayer.aadharNumber,
+                    'Transaction ID': newPlayer.transactionId,
+                    'Player Role': newPlayer.memberRole,
+                    Reason: newPlayer.reasonForJoining
+                },
+                documents: [
+                    { label: 'Photo', url: newPlayer.photoUrl },
+                    { label: 'Aadhar (Front)', url: newPlayer.aadharFrontUrl },
+                    { label: 'Aadhar (Back)', url: newPlayer.aadharBackUrl },
+                    { label: 'Payment receipt', url: newPlayer.receiptUrl }
+                ]
+            });
+        } catch (err) {
+            console.error('Failed to notify DDKA of player registration:', err);
         }
 
         res.status(201).json({ 

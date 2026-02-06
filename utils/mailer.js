@@ -205,6 +205,70 @@ const buildEntityLabel = (entityType) => {
   return 'player registration';
 };
 
+const registrationRecipient = process.env.REGISTRATION_NOTIFICATION_EMAIL || 'dhanbaddistrictkabaddi@gmail.com';
+const registrationLabels = {
+  player: 'Player',
+  institution: 'Institution',
+  official: 'Technical Official'
+};
+
+const renderDetailsTable = (details = {}) => {
+  const rows = Object.entries(details)
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+    .map(([label, value]) => `<tr><td style="padding:4px 8px;font-weight:600;">${escapeHtml(label)}</td><td style="padding:4px 8px;">${escapeHtml(String(value))}</td></tr>`)
+    .join('');
+  if (!rows) return '<p>No additional details provided.</p>';
+  return `<table style="width:100%; border-collapse:collapse;">${rows}</table>`;
+};
+
+const renderDocumentList = (documents = []) => {
+  const listItems = documents
+    .filter(doc => doc && doc.label)
+    .map(doc => {
+      const url = doc.url ? `<a href="${escapeHtml(doc.url)}" target="_blank" rel="noreferrer">${escapeHtml(doc.url)}</a>` : 'Not provided';
+      return `<li style="margin-bottom:4px;"><strong>${escapeHtml(doc.label)}:</strong> ${url}</li>`;
+    })
+    .join('');
+  return listItems ? `<ul>${listItems}</ul>` : '<p>No documents provided.</p>';
+};
+
+const sendRegistrationNotification = async ({ entityType = 'player', name, details = {}, documents = [] } = {}) => {
+  if (!registrationRecipient) {
+    throw new Error('Registration notification recipient missing');
+  }
+
+  const label = registrationLabels[entityType] || 'Applicant';
+  const subjectName = name ? `${name}` : 'New applicant';
+  const subject = `[DDKA] ${label} registration – ${subjectName}`;
+  const intro = `A new ${label} registration has been submitted and awaits approval. Please verify the attached photo, Aadhar, and payment proof before marking the account as approved.`;
+  const htmlBody = `
+    <p>Respected Dhanbad District Kabaddi Association Team,</p>
+    <p>${escapeHtml(intro)}</p>
+    <h3>Applicant details</h3>
+    ${renderDetailsTable(details)}
+    <h3>Documents / proofs</h3>
+    ${renderDocumentList(documents)}
+    <p>Kindly approve this registration at the earliest so the athlete/official can access the portal.</p>
+    <p>With regards,<br/>DDKA Website</p>
+  `;
+  const textBody = `Dhanbad District Kabaddi Association Team,
+
+${intro}
+
+Details:
+${Object.entries(details || {}).map(([label, value]) => `${label}: ${value}`).join('\n')}
+
+Documents:
+${documents.map(doc => `${doc.label}: ${doc.url || 'Not provided'}`).join('\n')}
+
+Kindly approve this registration so the applicant can access the portal.
+
+With regards,
+DDKA Website`;
+
+  return await sendWithFallback({ to: registrationRecipient, subject, text: textBody, html: wrapHtml(htmlBody) });
+};
+
 const sendApprovalEmail = async ({ to, name, idNo, entityType = 'player', loginId, loginPassword } = {}) => {
   if (!to) throw new Error('Recipient email is required');
 
@@ -283,6 +347,7 @@ module.exports = {
   sendDeletionEmail,
   sendApplicationReceivedEmail,
   sendDonationEmail,
+  sendRegistrationNotification,
   sendCustomEmail: async ({ to, subject, message, name, noGreeting } = {}) => {
     if (!to) throw new Error('Recipient email is required');
     if (!subject) throw new Error('Subject is required');

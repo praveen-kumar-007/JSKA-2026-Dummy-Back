@@ -1,7 +1,7 @@
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
-const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
+const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail, sendRegistrationNotification } = require('../utils/mailer');
 const { getLoginActivities } = require('../utils/loginActivity');
 
 // Helper to safely delete temp files
@@ -144,7 +144,6 @@ exports.registerTechnicalOfficial = async (req, res) => {
 
     await official.save();
 
-    // Send application received (pending) email
     if (official.email) {
       try {
         await sendApplicationReceivedEmail({
@@ -155,6 +154,30 @@ exports.registerTechnicalOfficial = async (req, res) => {
       } catch (err) {
         console.error('Failed to send technical official application received email:', err);
       }
+    }
+
+    try {
+      await sendRegistrationNotification({
+        entityType: 'official',
+        name: official.candidateName,
+        details: {
+          'Candidate Name': official.candidateName,
+          'Parent Name': official.parentName,
+          Email: official.email,
+          Mobile: official.mobile,
+          'Aadhar Number': official.aadharNumber,
+          'Transaction ID': official.transactionId,
+          'Designation': official.playerLevel,
+          Work: official.work
+        },
+        documents: [
+          { label: 'Signature', url: official.signatureUrl },
+          { label: 'Photo', url: official.photoUrl },
+          { label: 'Receipt', url: official.receiptUrl }
+        ]
+      });
+    } catch (err) {
+      console.error('Failed to notify DDKA of technical official registration:', err);
     }
 
     return res.status(201).json({
