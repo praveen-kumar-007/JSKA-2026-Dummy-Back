@@ -3,6 +3,7 @@ const Player = require('../models/Player');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
+const { getLoginActivities } = require('../utils/loginActivity');
 
 const safeUnlink = (file) => {
     if (!file) return;
@@ -38,6 +39,7 @@ exports.getPlayerById = async (req, res) => {
     try {
         const player = await Player.findById(req.params.id);
         if (!player) return res.status(404).json({ success: false, message: 'Player not found' });
+        const loginActivities = await getLoginActivities(player._id, 'player');
         // Map backend fields to frontend expected fields
         const mappedPlayer = {
             ...player.toObject(),
@@ -46,6 +48,7 @@ exports.getPlayerById = async (req, res) => {
             back: player.aadharBackUrl,
             receipt: player.receiptUrl
         };
+        mappedPlayer.loginActivities = loginActivities;
         res.status(200).json({ success: true, data: mappedPlayer });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching player' });

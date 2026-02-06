@@ -1,6 +1,7 @@
 const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { logLoginActivity, getLoginActivities } = require('../utils/loginActivity');
 
 // Generate JWT for admin, include role
 const generateToken = (id, role) => {
@@ -117,6 +118,16 @@ const login = async (req, res) => {
     }
 
     // Successful login - issue JWT for protected admin routes
+    const activityUserId = admin._id;
+    if (activityUserId) {
+      await logLoginActivity({
+        req,
+        userId: activityUserId,
+        role: 'admin',
+        email: admin.email,
+        loginType: admin.role,
+      });
+    }
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -153,6 +164,26 @@ const listAdmins = async (_req, res) => {
   } catch (error) {
     console.error('List Admins Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch admins' });
+  }
+};
+
+const getAdminLoginHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Admin id is required' });
+    }
+
+    const adminDoc = await Admin.findById(id).select('-password');
+    if (!adminDoc) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    const activities = await getLoginActivities(adminDoc._id, 'admin');
+    return res.status(200).json({ success: true, activities });
+  } catch (error) {
+    console.error('Admin Login History Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch admin login history' });
   }
 };
 
@@ -232,4 +263,4 @@ const updateAdmin = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin };
+module.exports = { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin, getAdminLoginHistory };

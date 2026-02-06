@@ -2,6 +2,7 @@ const Institution = require('../models/Institution');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const { sendApprovalEmail, sendRejectionEmail, sendDeletionEmail, sendApplicationReceivedEmail } = require('../utils/mailer');
+const { getLoginActivities } = require('../utils/loginActivity');
 
 const safeUnlink = (file) => {
     if (!file) return;
@@ -223,7 +224,10 @@ const getInstitutionById = async (req, res) => {
     try {
         const inst = await Institution.findById(req.params.id);
         if (!inst) return res.status(404).json({ success: false, message: 'Institution not found' });
-        res.status(200).json({ success: true, data: inst });
+        const loginActivities = await getLoginActivities(inst._id, 'institution');
+        const payload = inst.toObject();
+        payload.loginActivities = loginActivities;
+        res.status(200).json({ success: true, data: payload });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching institution' });
     }

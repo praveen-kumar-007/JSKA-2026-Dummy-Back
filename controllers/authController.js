@@ -3,6 +3,7 @@ const Player = require('../models/Player');
 const Institution = require('../models/Institution');
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const Donation = require('../models/Donation');
+const { logLoginActivity } = require('../utils/loginActivity');
 
 
 const generateToken = (id, role, extra = {}) => {
@@ -242,6 +243,19 @@ const login = async (req, res) => {
 
     const token = generateToken(tokenId, role, extra);
     const profile = sanitizeUser(user, role);
+
+    if (['player', 'institution', 'official'].includes(role)) {
+      const activityUserId = user && (user._id || user.id) ? (user._id || user.id) : null;
+      if (activityUserId) {
+        await logLoginActivity({
+          req,
+          userId: activityUserId,
+          role,
+          email: lowerEmail,
+          loginType: type,
+        });
+      }
+    }
 
     return res.status(200).json({ success: true, message: 'Login successful', token, role, profile });
   } catch (error) {
