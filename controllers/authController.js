@@ -108,7 +108,7 @@ const sanitizeUser = (doc, role) => {
 // NOTE: Login is performed using Email + Registered Mobile number (mobile used as password).
 const login = async (req, res) => {
   try {
-    const { type, email, password } = req.body;
+    const { type, email, password, latitude, longitude } = req.body;
 
     if (!type || !email || !password) {
       return res.status(400).json({ success: false, message: 'Type, email and password (registered mobile) are required' });
@@ -247,12 +247,21 @@ const login = async (req, res) => {
     if (['player', 'institution', 'official'].includes(role)) {
       const activityUserId = user && (user._id || user.id) ? (user._id || user.id) : null;
       if (activityUserId) {
+        const parseCoordinate = (value) => {
+          const num = typeof value === 'number' ? value : Number(value);
+          return Number.isFinite(num) ? num : null;
+        };
+
         await logLoginActivity({
           req,
           userId: activityUserId,
           role,
           email: lowerEmail,
           loginType: type,
+          coordinates: {
+            latitude: parseCoordinate(latitude),
+            longitude: parseCoordinate(longitude),
+          },
         });
       }
     }

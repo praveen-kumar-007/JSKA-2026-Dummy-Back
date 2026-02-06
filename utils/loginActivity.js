@@ -62,14 +62,16 @@ const resolveGeoCoordinates = (ipAddress) => {
   return { latitude: null, longitude: null };
 };
 
-const logLoginActivity = async ({ req, userId, role, email, loginType }) => {
+const logLoginActivity = async ({ req, userId, role, email, loginType, coordinates }) => {
   if (!req || !userId || !role) return;
   const userModel = USER_MODEL_BY_ROLE[role];
   if (!userModel) return;
 
   try {
-    const { ip, forwardedIp } = extractIps(req);
-    const location = resolveGeoCoordinates(ip);
+      const { ip, forwardedIp } = extractIps(req);
+      const location = resolveGeoCoordinates(ip);
+      const latitude = typeof coordinates?.latitude === 'number' ? coordinates.latitude : location.latitude;
+      const longitude = typeof coordinates?.longitude === 'number' ? coordinates.longitude : location.longitude;
     const payload = {
       userId,
       userType: role,
@@ -84,8 +86,8 @@ const logLoginActivity = async ({ req, userId, role, email, loginType }) => {
       method: req.method,
       host: req.headers.host || '',
       loginType: loginType || '',
-      latitude: location.latitude,
-      longitude: location.longitude,
+       latitude,
+       longitude,
       country: normalizeCountry(req.headers['cf-ipcountry'] || req.headers['x-appengine-country'] || req.headers['x-country-code']),
     };
     await LoginActivity.create(payload);
