@@ -1,13 +1,113 @@
 const Admin = require('../models/Admin');
+const LoginActivity = require('../models/LoginActivity');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { logLoginActivity, getLoginActivities } = require('../utils/loginActivity');
+const { logLoginActivity, getLoginActivities, MAX_LOGIN_ENTRIES } = require('../utils/loginActivity');
 
 // Generate JWT for admin, include role
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
+};
+
+const ALERT_DEFAULT_LIMIT = 60;
+
+const pickLoginActivityEntry = (doc) => ({
+  _id: doc._id,
+  ip: doc.ip,
+  forwardedIp: doc.forwardedIp,
+  userAgent: doc.userAgent,
+  acceptLanguage: doc.acceptLanguage,
+  referer: doc.referer,
+  path: doc.path,
+  method: doc.method,
+  loginType: doc.loginType,
+  country: doc.country,
+  createdAt: doc.createdAt,
+  latitude: Number.isFinite(doc.latitude) ? doc.latitude : null,
+  longitude: Number.isFinite(doc.longitude) ? doc.longitude : null,
+});
+
+const buildDisplayName = (userType, userDoc, fallback) => {
+  if (userDoc) {
+    if (userType === 'player') return userDoc.fullName || userDoc.email || fallback;
+    if (userType === 'institution') return userDoc.instName || userDoc.email || fallback;
+    if (userType === 'official') return userDoc.candidateName || userDoc.email || fallback;
+    if (userType === 'admin') return userDoc.username || userDoc.email || fallback;
+  }
+  return fallback || 'Unknown account';
+};
+
+const buildUserDetails = (userType, userDoc) => {
+  if (!userDoc) return null;
+  const base = {
+    id: userDoc._id,
+    email: userDoc.email || null,
+    status: userDoc.status || null,
+  };
+
+  if (userType === 'player') {
+    return {
+      ...base,
+      fullName: userDoc.fullName,
+      fathersName: userDoc.fathersName,
+      phone: userDoc.phone,
+      idNo: userDoc.idNo,
+      dob: userDoc.dob,
+    };
+  }
+
+  if (userType === 'institution') {
+    return {
+      ...base,
+      instName: userDoc.instName,
+      regNo: userDoc.regNo,
+      officePhone: userDoc.officePhone,
+      altPhone: userDoc.altPhone,
+      instType: userDoc.instType,
+      totalPlayers: userDoc.totalPlayers,
+    };
+  }
+
+  if (userType === 'official') {
+    return {
+      ...base,
+      candidateName: userDoc.candidateName,
+      parentName: userDoc.parentName,
+      mobile: userDoc.mobile,
+      grade: userDoc.grade,
+      playerLevel: userDoc.playerLevel,
+    };
+  }
+
+  if (userType === 'admin') {
+    return {
+      ...base,
+      username: userDoc.username,
+      role: userDoc.role,
+      permissions: userDoc.permissions || null,
+    };
+  }
+
+  return base;
+};
+
+const composeUserKey = (activity) => {
+  const identifier = activity.userId?._id?.toString()
+    || activity.userId
+    || activity.email
+    || activity._id?.toString()
+    || 'unknown';
+  return `${activity.userModel || activity.userType || 'login'}:${identifier}`;
+};
+
+const sanitizeRequestedLimit = (value) => {
+  const parsed = Number(value);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.min(150, Math.max(20, parsed));
+  }
+  return ALERT_DEFAULT_LIMIT;
 };
 
 // Admin Signup
@@ -263,4 +363,62 @@ const updateAdmin = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin, getAdminLoginHistory };
+const getLoginActivityAlerts = async (req, res) => {
+  try {
+    const limit = sanitizeRequestedLimit(req.query.limit);
+    const activities = await LoginActivity.find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('userId', 'fullName fathersName email phone parentsPhone instName regNo instType officePhone altPhone totalPlayers candidateName parentName mobile grade playerLevel status username role permissions idNo')
+      .lean();
+
+    const grouped = new Map();
+    activities.forEach((activity) => {
+      const key = composeUserKey(activity);
+      const userDoc = activity.userId && typeof activity.userId === 'object' ? activity.userId : null;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          userKey: key,
+          userType: activity.userType || activity.userModel || 'admin',
+          userModel: activity.userModel || activity.userType || 'unknown',
+          userId: (userDoc && userDoc._id) || (activity.userId && activity.userId._id) || activity.userId || null,
+          displayName: buildDisplayName(activity.userType, userDoc, activity.email),
+          email: activity.email || null,
+          userDetails: buildUserDetails(activity.userType, userDoc),
+          loginActivities: [],
+          latestLoginAt: null,
+        });
+      }
+
+      const group = grouped.get(key);
+      if (group && group.loginActivities.length < MAX_LOGIN_ENTRIES) {
+        group.loginActivities.push(pickLoginActivityEntry(activity));
+        if (!group.latestLoginAt) {
+          group.latestLoginAt = activity.createdAt;
+        }
+      }
+    });
+
+    const alerts = Array.from(grouped.values()).sort((a, b) => {
+      const aTime = a.latestLoginAt ? new Date(a.latestLoginAt).getTime() : 0;
+      const bTime = b.latestLoginAt ? new Date(b.latestLoginAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return res.status(200).json({ success: true, alerts });
+  } catch (error) {
+    console.error('Login Activity Alerts Error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to load login activity alerts' });
+  }
+};
+
+module.exports = {
+  signup,
+  login,
+  checkAdminExists,
+  listAdmins,
+  updateAdmin,
+  getCurrentAdmin,
+  getAdminLoginHistory,
+  getLoginActivityAlerts,
+};

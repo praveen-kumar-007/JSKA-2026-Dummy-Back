@@ -111,6 +111,7 @@ const getLoginActivities = async (userId, role, limit = MAX_LOGIN_ENTRIES) => {
 };
 
 module.exports = {
+  MAX_LOGIN_ENTRIES,
   logLoginActivity,
   getLoginActivities,
 };

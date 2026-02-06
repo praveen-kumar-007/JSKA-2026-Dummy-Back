@@ -1,5 +1,5 @@
 const express = require('express');
-const { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin, getAdminLoginHistory } = require('../controllers/adminController');
+const { signup, login, checkAdminExists, listAdmins, updateAdmin, getCurrentAdmin, getAdminLoginHistory, getLoginActivityAlerts } = require('../controllers/adminController');
 const { getBulkRecipients, sendBulkEmail } = require('../controllers/bulkEmailController');
 const { protect, admin, isSuperAdmin, requirePermission } = require('../middleware/authMiddleware');
 
@@ -15,6 +15,7 @@ router.get('/me', protect, admin, getCurrentAdmin);
 
 // Superadmin-only routes
 router.get('/', protect, isSuperAdmin, listAdmins);
+router.get('/login-activity-alerts', protect, isSuperAdmin, getLoginActivityAlerts);
 router.get('/:id/login-history', protect, isSuperAdmin, getAdminLoginHistory);
 router.patch('/:id', protect, isSuperAdmin, updateAdmin);
 router.get('/bulk-email/recipients', protect, requirePermission('canAccessBulkEmail'), getBulkRecipients);

@@ -3,7 +3,7 @@ const Player = require('../models/Player');
 const Institution = require('../models/Institution');
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const Donation = require('../models/Donation');
-const { logLoginActivity } = require('../utils/loginActivity');
+const { logLoginActivity, getLoginActivities } = require('../utils/loginActivity');
 
 
 const generateToken = (id, role, extra = {}) => {
@@ -320,6 +320,14 @@ const me = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const profile = sanitizeUser(user, role);
+    if (profile && ['player', 'institution', 'official'].includes(role)) {
+      const activityUserId = user._id;
+      if (activityUserId) {
+        const activities = await getLoginActivities(activityUserId, role);
+        profile.loginActivities = activities;
+      }
+    }
+
     return res.status(200).json({ success: true, role, profile });
   } catch (error) {
     console.error('Auth Me Error:', error);
