@@ -1,3 +1,5 @@
+const https = require('https');
+const { URLSearchParams } = require('url');
 const LoginActivity = require('../models/LoginActivity');
 const geoip = require('geoip-lite');
 
@@ -62,16 +64,108 @@ const resolveGeoCoordinates = (ipAddress) => {
   return { latitude: null, longitude: null };
 };
 
+const sanitizeLocationLabel = (value) => {
+  if (value == null) return null;
+  const label = String(value).trim();
+  if (!label) return null;
+  return label.length > 255 ? `${label.slice(0, 252)}...` : label;
+};
+
+const buildAddressLabel = (payload) => {
+  if (!payload) return null;
+  if (payload.display_name) return payload.display_name;
+  const address = payload.address || {};
+  const fields = [
+    address.road,
+    address.neighbourhood,
+    address.suburb,
+    address.village,
+    address.town,
+    address.city,
+    address.state,
+    address.country,
+  ].filter(Boolean);
+  return fields.length ? fields.join(', ') : null;
+};
+
+const reverseGeocodeCoordinates = (latitude, longitude) => new Promise((resolve) => {
+  const finalize = (value) => {
+    if (finalize.called) return;
+    finalize.called = true;
+    resolve(value);
+  };
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    finalize(null);
+    return;
+  }
+
+  const params = new URLSearchParams({
+    format: 'json',
+    lat: latitude.toString(),
+    lon: longitude.toString(),
+    zoom: '16',
+    addressdetails: '0',
+  });
+
+  const options = {
+    hostname: 'nominatim.openstreetmap.org',
+    path: `/reverse?${params.toString()}`,
+    method: 'GET',
+    headers: {
+      'User-Agent': 'DDKA-login-tracker/1.0 (contact@dhanbadkabaddiassociation.tech)'
+    },
+    timeout: 4000,
+  };
+
+  const req = https.request(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      if (res.statusCode !== 200) {
+        finalize(null);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(data || '{}');
+        const label = sanitizeLocationLabel(parsed.display_name || buildAddressLabel(parsed));
+        finalize(label);
+      } catch (err) {
+        finalize(null);
+      }
+    });
+  });
+
+  req.on('error', () => finalize(null));
+  req.on('timeout', () => {
+    req.destroy();
+    finalize(null);
+  });
+  req.end();
+});
+
+const parseNumberValue = (value) => {
+  if (value == null) return null;
+  const num = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
 const logLoginActivity = async ({ req, userId, role, email, loginType, coordinates }) => {
   if (!req || !userId || !role) return;
   const userModel = USER_MODEL_BY_ROLE[role];
   if (!userModel) return;
 
   try {
-      const { ip, forwardedIp } = extractIps(req);
-      const location = resolveGeoCoordinates(ip);
-      const latitude = typeof coordinates?.latitude === 'number' ? coordinates.latitude : location.latitude;
-      const longitude = typeof coordinates?.longitude === 'number' ? coordinates.longitude : location.longitude;
+    const { ip, forwardedIp } = extractIps(req);
+    const location = resolveGeoCoordinates(ip);
+    const preferredLatitude = parseNumberValue(coordinates?.latitude);
+    const preferredLongitude = parseNumberValue(coordinates?.longitude);
+    const latitude = preferredLatitude ?? location.latitude;
+    const longitude = preferredLongitude ?? location.longitude;
+    const accuracy = parseNumberValue(coordinates?.accuracy);
+    const locationLabel = (preferredLatitude != null && preferredLongitude != null)
+      ? await reverseGeocodeCoordinates(preferredLatitude, preferredLongitude)
+      : null;
     const payload = {
       userId,
       userType: role,
@@ -86,8 +180,10 @@ const logLoginActivity = async ({ req, userId, role, email, loginType, coordinat
       method: req.method,
       host: req.headers.host || '',
       loginType: loginType || '',
-       latitude,
-       longitude,
+      latitude,
+      longitude,
+      accuracy,
+      locationLabel,
       country: normalizeCountry(req.headers['cf-ipcountry'] || req.headers['x-appengine-country'] || req.headers['x-country-code']),
     };
     await LoginActivity.create(payload);

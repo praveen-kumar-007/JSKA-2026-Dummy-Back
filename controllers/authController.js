@@ -108,7 +108,7 @@ const sanitizeUser = (doc, role) => {
 // NOTE: Login is performed using Email + Registered Mobile number (mobile used as password).
 const login = async (req, res) => {
   try {
-    const { type, email, password, latitude, longitude } = req.body;
+    const { type, email, password, latitude, longitude, accuracy } = req.body;
 
     if (!type || !email || !password) {
       return res.status(400).json({ success: false, message: 'Type, email and password (registered mobile) are required' });
@@ -261,6 +261,7 @@ const login = async (req, res) => {
           coordinates: {
             latitude: parseCoordinate(latitude),
             longitude: parseCoordinate(longitude),
+            accuracy: parseCoordinate(accuracy),
           },
         });
       }

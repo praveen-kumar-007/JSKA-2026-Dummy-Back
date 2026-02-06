@@ -16,6 +16,8 @@ const loginActivitySchema = new mongoose.Schema({
   loginType: { type: String },
   latitude: { type: Number },
   longitude: { type: Number },
+  accuracy: { type: Number },
+  locationLabel: { type: String },
   country: { type: String },
 }, { timestamps: true });
 
