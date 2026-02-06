@@ -45,25 +45,6 @@ router.get('/card/:idNo', getPlayerByIdNo);
 router.get('/:id', getPlayerById);
 
 /**
- * @route   PUT /api/players/:id
- * @desc    Admin: edit player core details and optionally replace documents
- *          Accepts multipart/form-data with optional files: photo, front, back, receipt
- */
-router.put(
-    '/:id',
-    protect,
-    admin,
-    requirePermission('canAccessPlayerDetails'),
-    upload.fields([
-        { name: 'photo', maxCount: 1 },
-        { name: 'front', maxCount: 1 },
-        { name: 'back', maxCount: 1 },
-        { name: 'receipt', maxCount: 1 },
-    ]),
-    updatePlayer
-);
-
-/**
  * @route   GET /api/players
  * @desc    Fetch all player records for Admin Dashboard (Player Details tab)
  */
@@ -86,6 +67,25 @@ router.put('/assign-id', protect, admin, requirePermission('canAccessPlayerDetai
  * @desc    Clear/remove an assigned ID card number for a player
  */
 router.put('/clear-id', protect, admin, requirePermission('canAccessPlayerDetails'), clearPlayerIdNo);
+
+/**
+ * @route   PUT /api/players/:id
+ * @desc    Admin: edit player core details and optionally replace documents
+ *          Accepts multipart/form-data with optional files: photo, front, back, receipt
+ */
+router.put(
+    '/:id',
+    protect,
+    admin,
+    requirePermission('canAccessPlayerDetails'),
+    upload.fields([
+        { name: 'photo', maxCount: 1 },
+        { name: 'front', maxCount: 1 },
+        { name: 'back', maxCount: 1 },
+        { name: 'receipt', maxCount: 1 },
+    ]),
+    updatePlayer
+);
 
 /**
  * @route   DELETE /api/players/:id
