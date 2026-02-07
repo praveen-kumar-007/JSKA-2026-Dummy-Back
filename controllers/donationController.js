@@ -2,7 +2,7 @@ const Donation = require('../models/Donation');
 const cloudinary = require('cloudinary').v2;
 const path = require('path');
 const fs = require('fs');
-const { sendDonationEmail } = require('../utils/mailer');
+const { sendDonationEmail, sendDonationApprovalEmail, sendDonationVerificationEmail } = require('../utils/mailer');
 
 // Derive Cloudinary public_id from a secure_url and delete it
 const deleteCloudinaryByUrl = async (url) => {
@@ -60,9 +60,9 @@ exports.createDonation = async (req, res) => {
 
     // Send a donation receipt/acknowledgement email (best-effort)
     try {
-      await sendDonationEmail({ to: email, name, amount: Number(amount) });
+      await sendDonationVerificationEmail({ to: email, name, amount: Number(amount) });
     } catch (mailErr) {
-      console.warn('Donation email send failed:', mailErr.message || mailErr);
+      console.warn('Donation verification email send failed:', mailErr.message || mailErr);
     }
 
     res.json({ success: true, message: 'Donation recorded.', data: donation });
@@ -95,10 +95,16 @@ exports.updateDonationStatus = async (req, res) => {
     // If marked confirmed, send an acknowledgement/receipt email (best-effort)
     try {
       if (status === 'confirmed' && updated.email) {
-        await sendDonationEmail({ to: updated.email, name: updated.name, amount: updated.amount });
+        await sendDonationApprovalEmail({
+          to: updated.email,
+          name: updated.name,
+          amount: updated.amount,
+          downloadEmail: updated.email,
+          downloadPhone: updated.phone,
+        });
       }
     } catch (mailErr) {
-      console.warn('sendDonationEmail on status update failed:', mailErr.message || mailErr);
+      console.warn('sendDonationApprovalEmail on status update failed:', mailErr.message || mailErr);
     }
 
     res.json({ success: true, data: updated });
@@ -149,10 +155,16 @@ exports.updateDonationDetails = async (req, res) => {
     // Optional: send notification email if requested
     try {
       if (notify === 'true' && updated.email) {
-        await sendDonationEmail({ to: updated.email, name: updated.name, amount: updated.amount });
+        await sendDonationApprovalEmail({
+          to: updated.email,
+          name: updated.name,
+          amount: updated.amount,
+          downloadEmail: updated.email,
+          downloadPhone: updated.phone,
+        });
       }
     } catch (mailErr) {
-      console.warn('sendDonationEmail after detail update failed:', mailErr.message || mailErr);
+      console.warn('sendDonationApprovalEmail after detail update failed:', mailErr.message || mailErr);
     }
 
     res.json({ success: true, data: updated });

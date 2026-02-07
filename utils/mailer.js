@@ -341,12 +341,34 @@ const sendDonationEmail = async ({ to, name, amount, attachments } = {}) => {
   return await sendWithFallback({ to, subject, text, html, attachments: attachments || [] });
 };
 
+const sendDonationVerificationEmail = async ({ to, name, amount } = {}) => {
+  if (!to) throw new Error('Recipient email is required');
+  const tpl = templates.donationVerification;
+  const ctx = { name: name || 'Supporter', amount };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
+  return await sendWithFallback({ to, subject, text, html });
+};
+
+const sendDonationApprovalEmail = async ({ to, name, amount, downloadEmail, downloadPhone } = {}) => {
+  if (!to) throw new Error('Recipient email is required');
+  const tpl = templates.donationApproval;
+  const ctx = { name: name || 'Supporter', amount, downloadEmail, downloadPhone };
+  const subject = typeof tpl.subject === 'function' ? tpl.subject(ctx) : tpl.subject;
+  const html = wrapHtml(tpl.html(ctx));
+  const text = tpl.text(ctx);
+  return await sendWithFallback({ to, subject, text, html });
+};
+
 module.exports = {
   sendApprovalEmail,
   sendRejectionEmail,
   sendDeletionEmail,
   sendApplicationReceivedEmail,
   sendDonationEmail,
+  sendDonationApprovalEmail,
+  sendDonationVerificationEmail,
   sendRegistrationNotification,
   sendCustomEmail: async ({ to, subject, message, name, noGreeting } = {}) => {
     if (!to) throw new Error('Recipient email is required');

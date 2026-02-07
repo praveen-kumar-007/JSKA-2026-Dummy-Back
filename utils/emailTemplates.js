@@ -238,6 +238,59 @@ const templates = {
       'DDKA',
     ]),
   },
+
+  donationVerification: {
+    subject: ({ name = 'Supporter' } = {}) => `Donation Received – Under Verification, ${name}`,
+    html: ({ name = 'Supporter', amount } = {}) => `
+      <p>Dear ${name},</p>
+      <p>Thank you for choosing to support the Dhanbad District Kabaddi Association.</p>
+      <p>We have received your donation of <strong>₹${amount}</strong> and it is currently <strong>under verification</strong>.</p>
+      <p>Our team will confirm the payment shortly and send you an approval email with your official receipt and download instructions.</p>
+      <p>Until then, feel free to reply to this email if you want us to update your contact details or share the transaction reference again.</p>
+      <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
+    `,
+    text: ({ name = 'Supporter', amount } = {}) => wrapLines([
+      `Dear ${name},`,
+      '',
+      'Thank you for choosing to support the Dhanbad District Kabaddi Association.',
+      `We have received your donation of ₹${amount} and it is currently under verification.`,
+      'Our team will confirm the payment shortly and send you an approval email with your official receipt and download instructions.',
+      '',
+      'If you need to update your contact details or resend the transaction reference, reply to this message and we will assist you.',
+      '',
+      'With gratitude,',
+      'Dhanbad District Kabaddi Association',
+    ]),
+  },
+
+  donationApproval: {
+    subject: ({ name = 'Supporter' } = {}) => `Donation Approved – ${name}`,
+    html: ({ name = 'Supporter', amount, downloadEmail, downloadPhone } = {}) => `
+      <p>Dear ${name},</p>
+      <p>Your donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association has been officially <strong>approved</strong>.</p>
+      <p>You can download your official receipt anytime by visiting <a href="https://dhanbadkabaddiassociation.tech/login" target="_blank" rel="noreferrer">https://dhanbadkabaddiassociation.tech/login</a>, selecting <strong>Donor / Receipt</strong> from the dropdown menu, and entering the registered email and phone number shown below.</p>
+      <ul>
+        <li><strong>Email:</strong> ${downloadEmail || 'the email you registered with'}</li>
+        <li><strong>Phone:</strong> ${downloadPhone || 'the mobile number you registered with'}</li>
+      </ul>
+      <p>If you need help accessing the receipt, reply to this email or contact us on the same email address and phone number above.</p>
+      <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
+    `,
+    text: ({ name = 'Supporter', amount, downloadEmail, downloadPhone } = {}) => wrapLines([
+      `Dear ${name},`,
+      '',
+      `Your donation of ₹${amount} to Dhanbad District Kabaddi Association has been officially approved.`,
+      'You can download your official receipt by visiting https://dhanbadkabaddiassociation.tech/login, selecting Donor / Receipt from the dropdown, and entering the email and phone number you used during the donation.',
+      '',
+      `Email: ${downloadEmail || 'the email you registered with'}`,
+      `Phone: ${downloadPhone || 'the mobile number you registered with'}`,
+      '',
+      'If you need help accessing the receipt, reply to this email or contact us using the same email and phone number above.',
+      '',
+      'With gratitude,',
+      'Dhanbad District Kabaddi Association',
+    ]),
+  },
 };
 
 module.exports = {
