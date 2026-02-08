@@ -22,7 +22,9 @@ router.get('/sitemap.xml', async (req, res) => {
       { loc: '/register', priority: 1.0, changefreq: 'weekly' },
       { loc: '/institution', priority: 0.95, changefreq: 'weekly' },
       { loc: '/technical-official-registration', priority: 0.95, changefreq: 'weekly' },
+      { loc: '/verification', priority: 0.85, changefreq: 'monthly' },
       { loc: '/donate', priority: 0.7, changefreq: 'monthly' },
+      { loc: '/login', priority: 0.6, changefreq: 'monthly' },
       { loc: '/contact', priority: 0.6, changefreq: 'monthly' },
       { loc: '/privacy-policy', priority: 0.3, changefreq: 'yearly' },
       { loc: '/terms-conditions', priority: 0.3, changefreq: 'yearly' }
