@@ -17,6 +17,7 @@ const championPlayerRoutes = require('./routes/championPlayerRoutes');
 const refereeAdminRoutes = require('./routes/refereeAdminRoutes');
 const donationRoutes = require('./routes/donationRoutes');
 const authRoutes = require('./routes/authRoutes');
+const verificationRoutes = require('./routes/verificationRoutes');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 // 1. Load Environment Variables
@@ -141,6 +142,7 @@ app.use('/api/champion-players', championPlayerRoutes);
 app.use('/api/admin/referees', refereeAdminRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/verification', verificationRoutes);
 
 // Sitemap (dynamic) - serves sitemap.xml including dynamic articles/images
 const sitemapRoutes = require('./routes/sitemapRoutes');
