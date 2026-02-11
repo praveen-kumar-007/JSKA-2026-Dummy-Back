@@ -21,7 +21,7 @@ This project uses Brevo API (recommended on Render) or nodemailer with Gmail SMT
   # Optional reply-to address (where recipients should contact you)
   EMAIL_REPLY_TO=your_gmail@gmail.com
   # Optional logo shown in all emails (public image URL)
-  EMAIL_LOGO_URL=https://yourdomain.com/logo.png
+  EMAIL_LOGO_URL=https://res.cloudinary.com/dcqo5qt7b/image/upload/v1767429051/WhatsApp_Image_2026-01-03_at_1.57.17_PM_qg7rs3.jpg
    # If your password contains spaces, wrap it in quotes:
      # EMAIL_PASS="your password with spaces"
 

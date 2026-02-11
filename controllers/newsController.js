@@ -109,7 +109,7 @@ exports.shareNewsById = async (req, res) => {
     const imageUrl =
       news.images && news.images.length > 0
         ? news.images[0]
-        : `${frontendBase}/logo.png`;
+        : (process.env.EMAIL_LOGO_URL || `${frontendBase}/logo.png`);
 
     const rawDescription = news.content || '';
     const shortDescription =

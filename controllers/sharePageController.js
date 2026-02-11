@@ -66,7 +66,7 @@ exports.sharePage = async (req, res) => {
     const pageUrl = `${FRONTEND_BASE}${page.path}`;
     const title = escapeHtml(page.title);
     const description = escapeHtml(page.description);
-    const image = `${FRONTEND_BASE}/logo.png`;
+    const image = process.env.EMAIL_LOGO_URL || `${FRONTEND_BASE}/logo.png`;
 
     const html = `<!doctype html>
 <html lang="en">
