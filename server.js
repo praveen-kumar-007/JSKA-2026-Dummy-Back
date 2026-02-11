@@ -5,7 +5,6 @@ dotenv.config();
 const cors = require('cors');
 const cloudinary = require('cloudinary').v2;
 const connectDB = require('./config/db.js');
-const instRoutes = require('./routes/instRoutes');
 const playerRoutes = require('./routes/playerRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
@@ -41,13 +40,18 @@ const allowedOrigins = [
     // Local Development
     'http://localhost:5173',
     'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:5177',
+    'http://localhost:5178',
+    'http://localhost:5179',
     'http://localhost:3000',
     'http://localhost:3001',
     // Production Deployments
-    'https://ddka.vercel.app',
-    'https://ddka-a6bglnrea-praveen-kumar.vercel.app',
-    'https://dhanbadkabaddiassociation.tech',
-    'https://www.dhanbadkabaddiassociation.tech',
+    'https://jska.vercel.app',
+    'https://jska-a6bglnrea-praveen-kumar.vercel.app',
+    'https://jharkhandkabaddiassociation.org',
+    'https://www.jharkhandkabaddiassociation.org',
     // Environment Variable
     process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -70,7 +74,7 @@ app.use(cors({
             if (process.env.NODE_ENV !== 'production') {
                 console.warn(`[CORS Blocked]: Attempted access from ${origin}`);
             }
-            callback(new Error('CORS Policy: Origin not allowed by DDKA Security'));
+            callback(new Error('CORS Policy: Origin not allowed by JSKA Security'));
         }
     },
     // Allow PATCH so admin management toggles work (CORS preflight)
@@ -87,8 +91,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // 6. Routes
 app.get('/', (req, res) => {
     res.status(200).json({ 
-        message: 'DDKA API Gateway Online', 
-        owner: 'Dhanbad District Kabaddi Association',
+        message: 'JSKA API Gateway Online', 
+        owner: 'Jharkhand State Kabaddi Association',
         established: 2001 
     });
 });
@@ -127,7 +131,6 @@ app.get('/api/proxy/image', async (req, res) => {
     }
 });
 
-app.use('/api/institutions', instRoutes);
 app.use('/api/players', playerRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/gallery', galleryRoutes);
@@ -160,7 +163,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`
     ============================================
-    DDKA SERVER RUNNING ON PORT: ${PORT}
+    JSKA SERVER RUNNING ON PORT: ${PORT}
     MODE: ${process.env.NODE_ENV || 'Development'}
     ============================================
     `);

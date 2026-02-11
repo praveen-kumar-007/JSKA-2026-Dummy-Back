@@ -51,8 +51,7 @@ exports.registerTechnicalOfficial = async (req, res) => {
       work,
       mobile,
       education,
-      email,
-      transactionId
+      email
     } = req.body;
 
     const files = req.files || {};
@@ -72,51 +71,53 @@ exports.registerTechnicalOfficial = async (req, res) => {
       !work ||
       !mobile ||
       !education ||
-      !email ||
-      !transactionId
+      !email
     ) {
       safeUnlink(signatureFile);
       safeUnlink(photoFile);
       safeUnlink(receiptFile);
-      return res.status(400).json({ success: false, message: 'All fields are mandatory, including Transaction ID.' });
+      return res.status(400).json({ success: false, message: 'All fields are mandatory.' });
     }
 
     // Validate files
-    if (!signatureFile || !photoFile || !receiptFile) {
+    if (!signatureFile || !photoFile) {
       safeUnlink(signatureFile);
       safeUnlink(photoFile);
       safeUnlink(receiptFile);
-      return res.status(400).json({ success: false, message: 'Signature, Passport Size Photo and Payment Screenshot are required.' });
+      return res.status(400).json({ success: false, message: 'Signature and Passport Size Photo are required.' });
     }
 
-    // Basic duplicate check by Aadhar, Email or Transaction ID
+    // Basic duplicate check by Aadhar or Email
     const existing = await TechnicalOfficial.findOne({
       $or: [
         { aadharNumber },
-        { email },
-        { transactionId: transactionId && transactionId.toUpperCase().trim() }
+        { email }
       ]
     });
 
     if (existing) {
       safeUnlink(signatureFile);
       safeUnlink(photoFile);
-      safeUnlink(receiptFile);
-      return res.status(400).json({ success: false, message: 'Aadhar Number, Email or Transaction ID already registered as Technical Official.' });
+      return res.status(400).json({ success: false, message: 'Aadhar Number or Email already registered as Technical Official.' });
     }
 
-    // Upload to Cloudinary
-    const [signatureUpload, photoUpload, receiptUpload] = await Promise.all([
+    // Upload to Cloudinary (signature + photo, receipt optional)
+    const [signatureUpload, photoUpload] = await Promise.all([
       cloudinary.uploader.upload(signatureFile.path, {
         folder: 'ddka/technical-officials/signatures'
       }),
       cloudinary.uploader.upload(photoFile.path, {
         folder: 'ddka/technical-officials/photos'
-      }),
-      cloudinary.uploader.upload(receiptFile.path, {
-        folder: 'ddka/technical-officials/payments'
       })
     ]);
+
+    // If receipt provided, upload it as well
+    let receiptUpload = null;
+    if (receiptFile) {
+      receiptUpload = await cloudinary.uploader.upload(receiptFile.path, {
+        folder: 'ddka/technical-officials/payments'
+      });
+    }
 
     // Cleanup temp files
     safeUnlink(signatureFile);
@@ -136,11 +137,9 @@ exports.registerTechnicalOfficial = async (req, res) => {
       mobile,
       education,
       email,
-      transactionId: transactionId.toUpperCase().trim(),
-      examFee: 1000,
-      receiptUrl: receiptUpload.secure_url,
       signatureUrl: signatureUpload.secure_url,
       photoUrl: photoUpload.secure_url,
+      receiptUrl: receiptUpload ? receiptUpload.secure_url : undefined,
       status: 'Pending'
     });
 
@@ -159,24 +158,28 @@ exports.registerTechnicalOfficial = async (req, res) => {
     }
 
     try {
+      const detailsObj = {
+        'Candidate Name': official.candidateName,
+        'Parent Name': official.parentName,
+        Email: official.email,
+        Mobile: official.mobile,
+        'Aadhar Number': official.aadharNumber,
+        'Designation': official.playerLevel,
+        Work: official.work
+      };
+
+      const docs = [
+        { label: 'Signature', url: official.signatureUrl },
+        { label: 'Photo', url: official.photoUrl }
+      ];
+
+      if (official.receiptUrl) docs.push({ label: 'Receipt', url: official.receiptUrl });
+
       await sendRegistrationNotification({
         entityType: 'official',
         name: official.candidateName,
-        details: {
-          'Candidate Name': official.candidateName,
-          'Parent Name': official.parentName,
-          Email: official.email,
-          Mobile: official.mobile,
-          'Aadhar Number': official.aadharNumber,
-          'Transaction ID': official.transactionId,
-          'Designation': official.playerLevel,
-          Work: official.work
-        },
-        documents: [
-          { label: 'Signature', url: official.signatureUrl },
-          { label: 'Photo', url: official.photoUrl },
-          { label: 'Receipt', url: official.receiptUrl }
-        ]
+        details: detailsObj,
+        documents: docs
       });
     } catch (err) {
       console.error('Failed to notify DDKA of technical official registration:', err);

@@ -11,24 +11,21 @@ const playerSchema = new mongoose.Schema({
     parentsPhone: { type: String, required: true },
     address: { type: String, required: true },
     aadharNumber: { type: String, required: true },
+    district: { type: String, required: true },
     sportsExperience: { type: String },
     reasonForJoining: { type: String, required: true },
     acceptedTerms: { type: Boolean, required: true, default: false },
-    transactionId: { type: String, required: true, unique: true },
-    
+    transactionId: { type: String },
     // Cloudinary URLs (Stored as Strings)
     photoUrl: { type: String, required: true },
     aadharFrontUrl: { type: String, required: true },
     aadharBackUrl: { type: String, required: true },
-    receiptUrl: { type: String, required: true }, // NEW: For manual verification
-    
+    receiptUrl: { type: String }, // Optional payment proof (may be omitted)
     // Stored membership / ID card number (e.g. DDKA-1234)
     // Not marked unique to avoid hard failures on rare collisions
     idNo: { type: String, index: true },
-
     // Role printed on ID card (Player, Coach, etc.)
     memberRole: { type: String, default: 'Player' },
-
     status: { type: String, default: 'Pending', enum: ['Pending', 'Approved', 'Rejected'] }
 }, { timestamps: true });
 

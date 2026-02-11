@@ -9,7 +9,7 @@ const Gallery = require('../models/Gallery');
 router.get('/sitemap.xml', async (req, res) => {
   console.log('[SITEMAP] Request received');
   try {
-    const hostname = (process.env.FRONTEND_URL || 'https://dhanbadkabaddiassociation.tech').replace(/\/$/, '');
+    const hostname = (process.env.FRONTEND_URL || 'https://jharkhandkabaddiassociation.org').replace(/\/$/, '');
     console.log('[SITEMAP] hostname', hostname);
 
     const staticUrls = [

@@ -43,10 +43,6 @@ const registerInstitution = async (req, res) => {
         const screenshotFile = Array.isArray(files.screenshot) ? files.screenshot[0] : files.screenshot;
         const logoFile = Array.isArray(files.instLogo) ? files.instLogo[0] : files.instLogo;
 
-        if (!screenshotFile) {
-            return res.status(400).json({ success: false, message: "Payment screenshot is required." });
-        }
-
         if (!logoFile) {
             if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path);
             return res.status(400).json({ success: false, message: "Institution / college / club logo is required." });
@@ -58,18 +54,21 @@ const registerInstitution = async (req, res) => {
             return res.status(400).json({ success: false, message: "You must agree to the Terms & Conditions to register." });
         }
 
-        const existing = await Institution.findOne({ $or: [{ regNo }, { transactionId }] });
+        const existing = await Institution.findOne({ regNo });
         if (existing) {
             if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path); 
             if (logoFile && fs.existsSync(logoFile.path)) fs.unlinkSync(logoFile.path); 
-            return res.status(400).json({ success: false, message: "Reg No or Transaction ID already exists." });
+            return res.status(400).json({ success: false, message: "Reg No already exists." });
         }
 
-        const paymentUpload = await cloudinary.uploader.upload(screenshotFile.path, {
-            folder: 'ddka_payments',
-        });
-
-        if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path);
+        // Optional payment screenshot handling (not required)
+        let paymentUpload = null;
+        if (screenshotFile) {
+            paymentUpload = await cloudinary.uploader.upload(screenshotFile.path, {
+                folder: 'ddka_payments',
+            });
+            if (screenshotFile && fs.existsSync(screenshotFile.path)) fs.unlinkSync(screenshotFile.path);
+        }
 
         const logoUpload = await cloudinary.uploader.upload(logoFile.path, {
             folder: 'ddka_institution_logos',
@@ -80,7 +79,7 @@ const registerInstitution = async (req, res) => {
         const newInstitution = new Institution({
             ...req.body,
             acceptedTerms: acceptedTerms === 'true' || acceptedTerms === true,
-            screenshotUrl: paymentUpload.secure_url,
+            screenshotUrl: paymentUpload ? paymentUpload.secure_url : undefined,
             instLogoUrl: logoUrl
         });
 
@@ -95,25 +94,27 @@ const registerInstitution = async (req, res) => {
         }
 
         try {
+            const detailsObj = {
+                'Institution Name': newInstitution.instName,
+                'Reg. No.': newInstitution.regNo,
+                Email: newInstitution.email,
+                'Office Phone': newInstitution.officePhone,
+                'Alt Phone': newInstitution.altPhone,
+                Year: newInstitution.year,
+                'Total Players': newInstitution.totalPlayers,
+                Area: newInstitution.area,
+                'Surface': newInstitution.surfaceType
+            };
+            if (newInstitution.transactionId) detailsObj['Transaction ID'] = newInstitution.transactionId;
+
+            const documentsArr = [ { label: 'Logo', url: newInstitution.instLogoUrl } ];
+            if (newInstitution.screenshotUrl) documentsArr.push({ label: 'Payment screenshot', url: newInstitution.screenshotUrl });
+
             await sendRegistrationNotification({
                 entityType: 'institution',
                 name: newInstitution.instName,
-                details: {
-                    'Institution Name': newInstitution.instName,
-                    'Reg. No.': newInstitution.regNo,
-                    Email: newInstitution.email,
-                    'Office Phone': newInstitution.officePhone,
-                    'Alt Phone': newInstitution.altPhone,
-                    Year: newInstitution.year,
-                    'Transaction ID': newInstitution.transactionId,
-                    'Total Players': newInstitution.totalPlayers,
-                    Area: newInstitution.area,
-                    'Surface': newInstitution.surfaceType
-                },
-                documents: [
-                    { label: 'Logo', url: newInstitution.instLogoUrl },
-                    { label: 'Payment screenshot', url: newInstitution.screenshotUrl }
-                ]
+                details: detailsObj,
+                documents: documentsArr
             });
         } catch (err) {
             console.error('Failed to notify DDKA of institution registration:', err);

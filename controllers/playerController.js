@@ -92,11 +92,11 @@ exports.getPlayerByIdNo = async (req, res) => {
     }
 };
 
-// Helper: generate a unique player ID like DDKA-1234
+// Helper: generate a unique player ID like JSKA-123456
 const generateUniquePlayerIdNo = async () => {
-    const prefix = 'DDKA-';
-    for (let attempt = 0; attempt < 10; attempt++) {
-        const random = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+    const prefix = 'JSKA-';
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const random = Math.floor(100000 + Math.random() * 900000); // 6-digit number
         const idNo = `${prefix}${random}`;
         const existing = await Player.findOne({ idNo }).select('_id').lean();
         if (!existing) return idNo;
@@ -110,18 +110,18 @@ exports.registerPlayer = async (req, res) => {
         const { 
             fullName, fathersName, gender, dob, bloodGroup, 
             email, phone, parentsPhone, address, aadharNumber, 
-            sportsExperience, reasonForJoining, transactionId, acceptedTerms 
+            district, sportsExperience, reasonForJoining, acceptedTerms 
         } = req.body;
         
         const files = req.files;
 
         // --- STRICT VALIDATION ---
-        // Validate text fields including mandatory reasonForJoining
-        if (!fullName || !fathersName || !dob || !email || !phone || !aadharNumber || !transactionId || !reasonForJoining) {
+        // Validate text fields including mandatory reasonForJoining and district
+        if (!fullName || !fathersName || !dob || !email || !phone || !aadharNumber || !reasonForJoining || !district) {
             if (files) Object.values(files).forEach(f => {
                 if (fs.existsSync(f[0].path)) fs.unlinkSync(f[0].path);
             });
-            return res.status(400).json({ success: false, message: "All text fields are mandatory." });
+            return res.status(400).json({ success: false, message: "All text fields are mandatory, including district." });
         }
 
         if (acceptedTerms !== 'true' && acceptedTerms !== true) {
@@ -131,33 +131,30 @@ exports.registerPlayer = async (req, res) => {
             return res.status(400).json({ success: false, message: "You must agree to the Terms & Conditions to register." });
         }
 
-        // Validate mandatory 4 files
-        if (!files || !files.photo || !files.front || !files.back || !files.receipt) {
+        // Validate mandatory files (photo + aadhar front/back)
+        if (!files || !files.photo || !files.front || !files.back) {
             if (files) Object.values(files).forEach(f => {
                 if (fs.existsSync(f[0].path)) fs.unlinkSync(f[0].path);
             });
-            return res.status(400).json({ success: false, message: "All 4 documents (Photo, Aadhar Front/Back, and Receipt) are required." });
+            return res.status(400).json({ success: false, message: "Photo and Aadhar Front/Back are required." });
         }
 
         // --- DUPLICATE CHECK ---
-        const existing = await Player.findOne({ 
-            $or: [{ aadharNumber }, { transactionId: transactionId.toUpperCase().trim() }] 
-        });
+        const existing = await Player.findOne({ aadharNumber });
         
         if (existing) {
             Object.values(files).forEach(f => fs.unlinkSync(f[0].path));
-            return res.status(400).json({ success: false, message: "Aadhar Number or Transaction ID already registered." });
+            return res.status(400).json({ success: false, message: "Aadhar Number already registered." });
         }
 
         // --- CLOUDINARY UPLOAD ---
         const uploadPromises = [
             cloudinary.uploader.upload(files.photo[0].path, { folder: 'ddka/players/profiles' }),
             cloudinary.uploader.upload(files.front[0].path, { folder: 'ddka/players/aadhar' }),
-            cloudinary.uploader.upload(files.back[0].path, { folder: 'ddka/players/aadhar' }),
-            cloudinary.uploader.upload(files.receipt[0].path, { folder: 'ddka/players/payments' })
+            cloudinary.uploader.upload(files.back[0].path, { folder: 'ddka/players/aadhar' })
         ];
 
-        const [photo, front, back, receipt] = await Promise.all(uploadPromises);
+        const [photo, front, back] = await Promise.all(uploadPromises);
 
         // --- CLEANUP LOCAL TEMP FILES ---
         Object.values(files).forEach(fileArray => {
@@ -176,14 +173,13 @@ exports.registerPlayer = async (req, res) => {
             parentsPhone,
             address,
             aadharNumber,
+            district,
             sportsExperience,
             reasonForJoining,
-            transactionId: transactionId.toUpperCase().trim(),
             acceptedTerms: acceptedTerms === 'true' || acceptedTerms === true,
             photoUrl: photo.secure_url,
             aadharFrontUrl: front.secure_url,
             aadharBackUrl: back.secure_url,
-            receiptUrl: receipt.secure_url,
             status: 'Pending'
         });
 
@@ -206,19 +202,17 @@ exports.registerPlayer = async (req, res) => {
                     Phone: newPlayer.phone,
                     Parents: newPlayer.parentsPhone,
                     Aadhar: newPlayer.aadharNumber,
-                    'Transaction ID': newPlayer.transactionId,
                     'Player Role': newPlayer.memberRole,
                     Reason: newPlayer.reasonForJoining
                 },
                 documents: [
                     { label: 'Photo', url: newPlayer.photoUrl },
                     { label: 'Aadhar (Front)', url: newPlayer.aadharFrontUrl },
-                    { label: 'Aadhar (Back)', url: newPlayer.aadharBackUrl },
-                    { label: 'Payment receipt', url: newPlayer.receiptUrl }
+                    { label: 'Aadhar (Back)', url: newPlayer.aadharBackUrl }
                 ]
             });
         } catch (err) {
-            console.error('Failed to notify DDKA of player registration:', err);
+            console.error('Failed to notify JSKA of player registration:', err);
         }
 
         res.status(201).json({ 

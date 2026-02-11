@@ -113,7 +113,7 @@ const reverseGeocodeCoordinates = (latitude, longitude) => new Promise((resolve)
     path: `/reverse?${params.toString()}`,
     method: 'GET',
     headers: {
-      'User-Agent': 'DDKA-login-tracker/1.0 (contact@dhanbadkabaddiassociation.tech)'
+      'User-Agent': 'JSKA-login-tracker/1.0 (contact@dhanbadkabaddiassociation.tech)'
     },
     timeout: 4000,
   };

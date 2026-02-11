@@ -3,7 +3,7 @@
 
 const wrapLines = (lines) => lines.filter(Boolean).join('\n');
 
-const LOGIN_URL = 'https://dhanbadkabaddiassociation.tech/login';
+const LOGIN_URL = 'https://jharkhandkabaddiassociation.org/login';
 
 const templates = {
   playerApproval: {
@@ -11,13 +11,13 @@ const templates = {
     html: ({ name = 'Player', loginId, loginPassword } = {}) => `
       <p>Dear ${name},</p>
 
-      <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
+      <p>Greetings from <strong>Jharkhand State Kabaddi Association (JSKA)</strong>!</p>
 
-      <p>We are pleased to inform you that your registration has been <strong>successfully approved</strong> by the Dhanbad District Kabaddi Association.</p>
+      <p>We are pleased to inform you that your registration has been <strong>successfully approved</strong> by the Jharkhand State Kabaddi Association (JSKA).</p>
 
       <p>All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.</p>
 
-      <p>Please visit the <strong>DDKA official website</strong> to check your details and download your ID card.</p>
+      <p>Please visit the <strong>JSKA official website</strong> to check your details and download your ID card.</p>
 
       <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
 
@@ -39,9 +39,9 @@ const templates = {
     text: ({ name = 'Player', loginId, loginPassword } = {}) => wrapLines([
       `Dear ${name},`,
       '',
-      'Greetings from Dhanbad District Kabaddi Association!',
+      'Greetings from Jharkhand State Kabaddi Association (JSKA)!',
       '',
-      'We are pleased to inform you that your registration has been successfully approved by the Dhanbad District Kabaddi Association.',
+      'We are pleased to inform you that your registration has been successfully approved by the Jharkhand State Kabaddi Association (JSKA).',
       '',
       'All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.',
       '',
@@ -68,10 +68,10 @@ const templates = {
     subject: ({ name = 'Applicant' } = {}) => `Institution Registration Approved – ${name}`,
     html: ({ name = 'Applicant', loginId, loginPassword } = {}) => `
       <p>Dear ${name},</p>
-      <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
+      <p>Greetings from <strong>Jharkhand State Kabaddi Association (JSKA)</strong>!</p>
       <p>We are pleased to inform you that your institution registration has been <strong>approved</strong>.</p>
       <p>All details and documents submitted by you have been verified and found correct.</p>
-      <p>You can log in to the <strong>DDKA Institution Portal</strong> to view and manage your institution details.</p>
+      <p>You can log in to the <strong>JSKA Institution Portal</strong> to view and manage your institution details.</p>
 
       <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
 
@@ -158,7 +158,7 @@ const templates = {
     subject: ({ name = 'Applicant' } = {}) => `Registration Update – ${name}`,
     html: ({ name = 'Applicant', label = 'registration' } = {}) => `
       <p>Dear ${name},</p>
-      <p>Thank you for your ${label} submission to the Dhanbad District Kabaddi Association.</p>
+      <p>Thank you for your ${label} submission to the Jharkhand State Kabaddi Association (JSKA).</p>
       <p>After review, we regret to inform you that your ${label} has been <strong>rejected</strong>.</p>
       <p>If you believe this was a mistake, please contact us for clarification.</p>
       <br />
@@ -168,7 +168,7 @@ const templates = {
     text: ({ name = 'Applicant', label = 'registration' } = {}) => wrapLines([
       `Dear ${name},`,
       '',
-      `Thank you for your ${label} submission to the Dhanbad District Kabaddi Association.`,
+      `Thank you for your ${label} submission to the Jharkhand State Kabaddi Association (JSKA).`, 
       '',
       `After review, we regret to inform you that your ${label} has been rejected.`,
       'If you believe this was a mistake, please contact us for clarification.',
@@ -225,7 +225,7 @@ const templates = {
     subject: ({ name = 'Supporter' } = {}) => `Thank you for your donation, ${name}`,
     html: ({ name = 'Supporter', amount } = {}) => `
       <p>Dear ${name},</p>
-      <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Dhanbad District Kabaddi Association.</p>
+      <p>Thank you for your generous donation of <strong>₹${amount}</strong> to the Jharkhand State Kabaddi Association (JSKA).</p>
       <p>We will process your contribution and send an official receipt shortly.</p>
       <p>With gratitude,<br/>Dhanbad District Kabaddi Association</p>
     `,
@@ -235,7 +235,7 @@ const templates = {
       `Thank you for your generous donation of ₹${amount} to Dhanbad District Kabaddi Association. We will process your contribution and send an official receipt shortly.`,
       '',
       'With gratitude,',
-      'DDKA',
+      'JSKA',
     ]),
   },
 

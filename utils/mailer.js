@@ -6,9 +6,9 @@ const { templates } = require('./emailTemplates');
 const logoUrl = process.env.EMAIL_LOGO_URL;
 const logoFooterHtml = logoUrl
   ? `<div style="text-align:center; margin-top:20px;">
-      <img src="${logoUrl}" alt="DDKA" style="max-width:140px; height:auto;" />
+      <img src="${logoUrl}" alt="JSKA" style="max-width:140px; height:auto;" />
     </div>`
-  : '';
+  : ''; 
 
 const wrapHtml = (innerHtml) => `
   <div style="font-family: Arial, Helvetica, sans-serif; line-height:1.6; color:#111; max-width:680px;">
@@ -112,7 +112,7 @@ const sendWithFallback = async (mailOptions) => {
       const payload = {
         sender: {
           email: mail.from,
-          name: process.env.EMAIL_FROM_NAME || 'DDKA'
+          name: process.env.EMAIL_FROM_NAME || 'JSKA'
         },
         replyTo: mail.replyTo ? { email: mail.replyTo } : undefined,
         to: toList.map(email => ({ email })),
@@ -205,7 +205,7 @@ const buildEntityLabel = (entityType) => {
   return 'player registration';
 };
 
-const registrationRecipient = process.env.REGISTRATION_NOTIFICATION_EMAIL || 'dhanbaddistrictkabaddi@gmail.com';
+const registrationRecipient = process.env.REGISTRATION_NOTIFICATION_EMAIL || 'jharkhandstatekabaddi@gmail.com';
 const registrationLabels = {
   player: 'Player',
   institution: 'Institution',
@@ -239,17 +239,17 @@ const sendRegistrationNotification = async ({ entityType = 'player', name, detai
 
   const label = registrationLabels[entityType] || 'Applicant';
   const subjectName = name ? `${name}` : 'New applicant';
-  const subject = `[DDKA] ${label} registration – ${subjectName}`;
-  const intro = `A new ${label} registration has been submitted and awaits approval. Please verify the attached photo, Aadhar, and payment proof before marking the account as approved.`;
+  const subject = `[JSKA] ${label} registration – ${subjectName}`;
+  const intro = `A new ${label} registration has been submitted and awaits approval. Please verify the attached photo and identity documents. If a payment proof is attached, please verify it before marking the account as approved.`;
   const htmlBody = `
-    <p>Respected Dhanbad District Kabaddi Association Team,</p>
+    <p>Respected Jharkhand State Kabaddi Association Team,</p>
     <p>${escapeHtml(intro)}</p>
     <h3>Applicant details</h3>
     ${renderDetailsTable(details)}
     <h3>Documents / proofs</h3>
     ${renderDocumentList(documents)}
     <p>Kindly approve this registration at the earliest so the athlete/official can access the portal.</p>
-    <p>With regards,<br/>DDKA Website</p>
+    <p>With regards,<br/>JSKA Website</p>
   `;
   const textBody = `Dhanbad District Kabaddi Association Team,
 

@@ -2,6 +2,18 @@ const Player = require('../models/Player');
 const TechnicalOfficial = require('../models/TechnicalOfficial');
 const Institution = require('../models/Institution');
 
+const normalizeInstitution = (inst, identifier) => ({
+  role: 'institution',
+  idNumber: inst.regNo ?? identifier,
+  name: inst.instName,
+  contactPerson: inst.contactPerson || undefined,
+  email: inst.email || undefined,
+  phone: inst.officePhone || inst.altPhone || undefined,
+  photoUrl: inst.instLogoUrl,
+  roles: ['institution'],
+  status: inst.status,
+});
+
 const normalizePlayer = (player, identifier) => ({
   role: 'player',
   idNumber: player.idNo ?? identifier,
@@ -13,7 +25,6 @@ const normalizePlayer = (player, identifier) => ({
     const normalizedRole = (player.memberRole || '').toLowerCase();
     const roles = new Set(['player']);
     if (normalizedRole.includes('official') || normalizedRole.includes('referee')) roles.add('official');
-    if (normalizedRole.includes('inst') || normalizedRole.includes('institution')) roles.add('institute');
     return Array.from(roles);
   })(),
   status: player.status,
@@ -35,17 +46,6 @@ const normalizeOfficial = (official, identifier) => ({
   photoUrl: official.photoUrl,
   roles: ['official'],
   status: official.status,
-});
-
-const normalizeInstitution = (inst, identifier) => ({
-  role: 'institute',
-  idNumber: inst.regNo ?? inst.transactionId ?? identifier,
-  name: inst.instName,
-  fatherName: inst.headName ?? '--',
-  dob: inst.year ? new Date(`${inst.year}-01-01`).toISOString() : undefined,
-  photoUrl: inst.instLogoUrl,
-  roles: ['institute'],
-  status: inst.status,
 });
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
