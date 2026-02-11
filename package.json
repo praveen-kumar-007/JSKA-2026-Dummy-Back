@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "test-email": "node scripts/test-send-email.js",
-    "postinstall": "node scripts/ensure-cloudinary-qpolyfill.js"
+    "postinstall": "node scripts/ensure-cloudinary-qpolyfill.js",
+    "ci-install": "npm ci --prefer-offline --no-audit"
   },
   "keywords": [],
   "author": "",
