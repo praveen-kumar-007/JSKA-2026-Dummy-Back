@@ -242,7 +242,7 @@ const sendRegistrationNotification = async ({ entityType = 'player', name, detai
   const subject = `[JSKA] ${label} registration – ${subjectName}`;
   const intro = `A new ${label} registration has been submitted and awaits approval. Please verify the attached photo and identity documents. If a payment proof is attached, please verify it before marking the account as approved.`;
   const htmlBody = `
-    <p>Respected Jharkhand State Kabaddi Association Team,</p>
+    <p>Respected Jharkhand State Kabaddi Association (JSKA) Team,</p>
     <p>${escapeHtml(intro)}</p>
     <h3>Applicant details</h3>
     ${renderDetailsTable(details)}
@@ -251,7 +251,7 @@ const sendRegistrationNotification = async ({ entityType = 'player', name, detai
     <p>Kindly approve this registration at the earliest so the athlete/official can access the portal.</p>
     <p>With regards,<br/>JSKA Website</p>
   `;
-  const textBody = `Dhanbad District Kabaddi Association Team,
+  const textBody = `Jharkhand State Kabaddi Association (JSKA) Team,
 
 ${intro}
 
@@ -264,7 +264,7 @@ ${documents.map(doc => `${doc.label}: ${doc.url || 'Not provided'}`).join('\n')}
 Kindly approve this registration so the applicant can access the portal.
 
 With regards,
-DDKA Website`;
+JSKA Website`;
 
   return await sendWithFallback({ to: registrationRecipient, subject, text: textBody, html: wrapHtml(htmlBody) });
 };
@@ -381,17 +381,17 @@ module.exports = {
     const htmlBody = noGreeting
       ? `
       ${htmlMessage}
-      <p>With regards,<br/>Dhanbad District Kabaddi Association</p>
+      <p>With regards,<br/>Jharkhand State Kabaddi Association (JSKA)</p>
     `
       : `
       <p>Respected ${escapeHtml(greetingName)},</p>
       ${htmlMessage}
-      <p>With regards,<br/>Dhanbad District Kabaddi Association</p>
+      <p>With regards,<br/>Jharkhand State Kabaddi Association (JSKA)</p>
     `;
     const html = wrapHtml(htmlBody);
     const text = noGreeting
-      ? `${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`
-      : `Respected ${greetingName},\n\n${safeText || ''}\n\nWith regards,\nDhanbad District Kabaddi Association`;
+      ? `${safeText || ''}\n\nWith regards,\nJharkhand State Kabaddi Association (JSKA)`
+      : `Respected ${greetingName},\n\n${safeText || ''}\n\nWith regards,\nJharkhand State Kabaddi Association (JSKA)`;
     return await sendWithFallback({ to, subject, text, html });
   }
 };

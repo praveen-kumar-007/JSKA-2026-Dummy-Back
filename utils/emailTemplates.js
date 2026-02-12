@@ -13,28 +13,29 @@ const templates = {
 
       <p>Greetings from <strong>Jharkhand State Kabaddi Association (JSKA)</strong>!</p>
 
-      <p>We are pleased to inform you that your registration has been <strong>successfully approved</strong> by the Jharkhand State Kabaddi Association (JSKA).</p>
+      <p>We are pleased to inform you that your registration has been <strong>approved</strong> by the Jharkhand State Kabaddi Association (JSKA).</p>
 
-      <p>All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.</p>
+      <p>All submitted details and documents have been verified. Your JSKA membership is now active.</p>
 
-      <p>Please visit the <strong>JSKA official website</strong> to check your details and download your ID card.</p>
+      <p>Next steps:</p>
+      <ul>
+        <li>Sign in at <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a> to view your profile.</li>
+        <li>Download your JSKA ID card from your account once available.</li>
+        <li>Keep your contact details updated to receive event invitations and notices.</li>
+      </ul>
 
-      <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
-
-      <p><strong>Login details for Player Portal:</strong><br/>
+      <p><strong>Login details (if provided):</strong><br/>
       Login ID: <strong>${loginId || 'your registered email address'}</strong><br/>
       Password: <strong>${loginPassword || 'your registered mobile number (used during registration)'}</strong></p>
 
-      <p>Your Login ID is your registered email address and your password is your registered mobile number.</p>
+      <p>If you need help accessing your account, reply to this email or contact the JSKA office (contact details available on the website).</p>
 
-      <p>You will need to enter these details exactly as registered to access your account and ID card.</p>
-
-      <p>We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.</p>
+      <p>We look forward to supporting your kabaddi development and wish you success on the mat.</p>
 
       <br />
       <p>With best wishes,<br />
-      <strong>Dhanbad District Kabaddi Association</strong><br />
-      Official Registration Team</p>
+      <strong>Jharkhand State Kabaddi Association (JSKA)</strong><br />
+      Membership &amp; Registrations Team</p>
     `,
     text: ({ name = 'Player', loginId, loginPassword } = {}) => wrapLines([
       `Dear ${name},`,
@@ -45,7 +46,7 @@ const templates = {
       '',
       'All the details and documents submitted by you have been verified and found correct. You are now officially registered with our association.',
       '',
-      'Please visit the DDKA official website to check your details and download your ID card.',
+      'Please visit the JSKA website to check your details and download your ID card.',
       `Login URL: ${LOGIN_URL}`,
       '',
       'Login details for Player Portal:',
@@ -56,11 +57,11 @@ const templates = {
       '',
       'You will need to enter these details exactly as registered to access your account and ID card.',
       '',
-      'We wish you great success in your kabaddi journey and hope you achieve your dreams in the sport.',
+      'We wish you great success in your kabaddi journey and hope you achieve your goals in the sport.',
       '',
       'With best wishes,',
-      'Dhanbad District Kabaddi Association',
-      'Official Registration Team',
+      'Jharkhand State Kabaddi Association (JSKA)',
+      'Membership & Registrations Team',
     ]),
   },
 
@@ -113,68 +114,74 @@ const templates = {
     subject: ({ name = 'Applicant' } = {}) => `Technical Official Registration Approved – ${name}`,
     html: ({ name = 'Applicant', loginId, loginPassword } = {}) => `
       <p>Dear ${name},</p>
-      <p>Greetings from <strong>Dhanbad District Kabaddi Association</strong>!</p>
-      <p>We are happy to inform you that your <strong>Technical Official registration</strong> has been <strong>approved</strong>.</p>
-      <p>Your details and documents have been verified and accepted as per our guidelines.</p>
+      <p>Greetings from <strong>Jharkhand State Kabaddi Association (JSKA)</strong>!</p>
+      <p>We are happy to inform you that your <strong>Technical Official / Referee registration</strong> has been <strong>approved</strong>.</p>
+      <p>Your documents have been verified and you are now listed with JSKA Technical Officials.</p>
 
-      <p><strong>Login details for Technical Official Portal:</strong><br/>
+      <p>Next steps for Technical Officials:</p>
+      <ul>
+        <li>Sign in at <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a> to view your profile and certificate (if issued).</li>
+        <li>Keep your contact details updated so JSKA can notify you of workshops, trials and appointments.</li>
+      </ul>
+
+      <p><strong>Login details (if provided):</strong><br/>
       Login ID: <strong>${loginId || 'your registered email address'}</strong><br/>
       Password: <strong>${loginPassword || 'your registered mobile number (used during registration)'}</strong></p>
 
-      <p>Your Login ID is your registered email address and your password is your registered mobile number.</p>
-
-      <p>You will need to enter these details exactly as registered to access your account.</p>
-
-      <p>You can log in directly here: <a href="${LOGIN_URL}" target="_blank" rel="noreferrer">${LOGIN_URL}</a></p>
+      <p>If you need assistance, reply to this email or contact the JSKA office via the contact details on our website.</p>
       <br />
       <p>With best wishes,<br />
-      <strong>Dhanbad District Kabaddi Association</strong><br />
+      <strong>Jharkhand State Kabaddi Association (JSKA)</strong><br />
       Technical Officials Panel</p>
     `,
     text: ({ name = 'Applicant', loginId, loginPassword } = {}) => wrapLines([
       `Dear ${name},`,
       '',
-      'Greetings from Dhanbad District Kabaddi Association!',
+      'Greetings from Jharkhand State Kabaddi Association (JSKA)!',
       '',
-      'We are happy to inform you that your Technical Official registration has been approved.',
-      'Your details and documents have been verified and accepted as per our guidelines.',
+      'We are happy to inform you that your Technical Official / Referee registration has been approved. Your documents have been verified and accepted as per our guidelines.',
       '',
-      'Login details for Technical Official Portal:',
+      'Next steps:',
+      `Sign in: ${LOGIN_URL}`,
+      'Check your profile and download any issued certificates from your account.',
+      '',
+      'Login details (if provided):',
       `Login ID: ${loginId || 'your registered email address'}`,
       `Password: ${loginPassword || 'your registered mobile number (used during registration)'}`,
-      `Login URL: ${LOGIN_URL}`,
       '',
-      'Your Login ID is your registered email address and your password is your registered mobile number.',
-      '',
-      'You will need to enter these details exactly as registered to access your account.',
+      'If you need assistance, reply to this email or contact the JSKA office.',
       '',
       'With best wishes,',
-      'Dhanbad District Kabaddi Association',
+      'Jharkhand State Kabaddi Association (JSKA)',
       'Technical Officials Panel',
     ]),
   },
 
   genericRejection: {
     subject: ({ name = 'Applicant' } = {}) => `Registration Update – ${name}`,
-    html: ({ name = 'Applicant', label = 'registration' } = {}) => `
+    html: ({ name = 'Applicant', label = 'registration', reason } = {}) => `
       <p>Dear ${name},</p>
       <p>Thank you for your ${label} submission to the Jharkhand State Kabaddi Association (JSKA).</p>
       <p>After review, we regret to inform you that your ${label} has been <strong>rejected</strong>.</p>
-      <p>If you believe this was a mistake, please contact us for clarification.</p>
+      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
+      <p>If you believe this decision is in error or you wish to submit corrected documents, please reply to this email and our registrations team will review your case.</p>
       <br />
       <p>Regards,<br />
-      <strong>Dhanbad District Kabaddi Association</strong></p>
+      <strong>Jharkhand State Kabaddi Association (JSKA)</strong><br />
+      Membership &amp; Registrations Team</p>
     `,
-    text: ({ name = 'Applicant', label = 'registration' } = {}) => wrapLines([
+    text: ({ name = 'Applicant', label = 'registration', reason } = {}) => wrapLines([
       `Dear ${name},`,
       '',
-      `Thank you for your ${label} submission to the Jharkhand State Kabaddi Association (JSKA).`, 
+      `Thank you for your ${label} submission to the Jharkhand State Kabaddi Association (JSKA).`,
       '',
       `After review, we regret to inform you that your ${label} has been rejected.`,
-      'If you believe this was a mistake, please contact us for clarification.',
+      reason ? `Reason: ${reason}` : '',
+      'If you believe this decision is in error or you have corrected documents, reply to this email and our registrations team will review again.',
       '',
       'Regards,',
-      'Dhanbad District Kabaddi Association',
+      'Jharkhand State Kabaddi Association (JSKA)',
+      'Membership & Registrations Team',
     ]),
   },
 
@@ -201,23 +208,31 @@ const templates = {
   },
 
   applicationReceived: {
-    subject: ({ name = 'Applicant' } = {}) => `Application Received – ${name}`,
-    html: ({ name = 'Applicant', label = 'registration' } = {}) => `
+    subject: ({ name = 'Applicant', label = 'application' } = {}) => `Application Received – ${name}`,
+    html: ({ name = 'Applicant', label = 'registration', entityType = 'player' } = {}) => `
       <p>Dear ${name},</p>
-      <p>We have received your ${label} application.</p>
-      <p>Your data and records are <strong>under verification</strong>. After successful verification, you will receive further information from us.</p>
+      <p>Thank you for applying to the Jharkhand State Kabaddi Association (JSKA).</p>
+      <p>Your ${entityType === 'official' ? 'Technical Official / Referee' : 'Player'} ${label} has been received and is now <strong>under verification</strong>.</p>
+      <p>Typical processing time: <strong>2–5 working days</strong>. We will notify you by email when your application status changes (approved / rejected).</p>
+      <p>Please keep your phone and email reachable and retain copies of any original documents until verification completes.</p>
       <br />
-      <p>Thank you,<br />
-      <strong>Dhanbad District Kabaddi Association</strong></p>
+      <p>With thanks,<br />
+      <strong>Jharkhand State Kabaddi Association (JSKA)</strong><br />
+      Membership &amp; Registrations Team</p>
     `,
-    text: ({ name = 'Applicant', label = 'registration' } = {}) => wrapLines([
+    text: ({ name = 'Applicant', label = 'registration', entityType = 'player' } = {}) => wrapLines([
       `Dear ${name},`,
       '',
-      `We have received your ${label} application.`,
-      'Your data and records are under verification. After successful verification, you will receive further information from us.',
+      'Thank you for applying to the Jharkhand State Kabaddi Association (JSKA).',
       '',
-      'Thank you,',
-      'Dhanbad District Kabaddi Association',
+      `Your ${entityType === 'official' ? 'Technical Official / Referee' : 'Player'} ${label} has been received and is under verification.`,
+      'Typical processing time: 2–5 working days. We will notify you by email when the status changes.',
+      '',
+      'Please keep your phone and email reachable and retain copies of original documents until verification completes.',
+      '',
+      'With thanks,',
+      'Jharkhand State Kabaddi Association (JSKA)',
+      'Membership & Registrations Team',
     ]),
   },
 
